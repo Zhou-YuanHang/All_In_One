@@ -1,0 +1,74 @@
+# ============================================================
+# All_In_One / SimWorkbench —— Git 忽略规则
+# 目标：远程仓库只保留「源码 + 文档 + 脚本 + 测试」，不放大体积
+#       二进制构建产物、运行产物与本机调试残留。
+# 说明：src/ 下的两个旧工具各自带有 .gitignore（来自原仓库），
+#       会继续在各自子目录内生效。
+# ============================================================
+
+# ---------- MATLAB / Simulink ----------
+# 自动保存与备份
+*.asv
+*.autosave
+*.m~
+*.bak
+# 模型与数据字典（由流水线/测试生成，不入库；如需随仓库分发示例模型，
+# 可在具体路径上写 !样例.slx 反向排除）
+*.slx
+*.sldd
+*.slxc
+# 代码生成目录与中间文件
+slprj/
+codegen/
+*_ert_rtw/
+*_grt_rtw/
+*.rtw
+*.mex*
+*.exe
+
+# ---------- 本仓库的构建产物 ----------
+# 打包暂存目录（每次 final_verify / make_* 重新生成）
+build/appstage/
+build/stage/
+# 打包输出（App 安装包 / 工具箱）
+build/*.mlappinstall
+build/*.mltbx
+# 验收与冒烟报告（运行后生成，精确值以现场运行为准）
+build/*_report.txt
+# 真实工作簿回归留下的模型与导出文件
+build/mcu_demo/
+build/myModel.slx
+build/mcu_export_roundtrip.xlsx
+
+# ---------- 一次性排查脚本（本机调试用，不属于交付物）----------
+build/check_app_state.m
+build/desktop_check.m
+build/diag_addons.m
+build/verify_launch.m
+build/verify_reinstall.m
+build/validate_mcu_ports.m
+build/inspect_ports.py
+tools/probe_env.m
+tools/probe_ui.m
+tools/smoke_model_probe.m
+tools/smoke_model_tests.m
+tools/ui_probe.png
+tools/_tmp_dict_test.txt
+
+# ---------- Python（模板生成 / 反向同步辅助脚本）----------
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# ---------- 编辑器 / 操作系统 ----------
+.vscode/
+.idea/
+.history/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---------- 通用临时文件 ----------
+*.log
+*.tmp

@@ -1,0 +1,235 @@
+{
+  "copiedAt": "2026-10-29T09:11:26.845Z",
+  "map": {
+    "F:\\GithubRepos\\AutoCreateModel": "F:\\GithubRepos\\All_In_One\\src\\NewModelApp",
+    "F:\\GithubRepos\\AutoCreateSldd": "F:\\GithubRepos\\All_In_One\\src\\AutoCreateSldd"
+  },
+  "provenance": {
+    "AutoCreateModel": {
+      "head": "ref: refs/heads/master",
+      "commit": "0cc5db545f3eeb1dc32865ff05cfe6bcc251f6a8"
+    },
+    "AutoCreateSldd": {
+      "head": "ref: refs/heads/master",
+      "commit": "3e731ba7c3c1d52723444421234229235e0e2f9d"
+    }
+  },
+  "files": [
+    {
+      "src": "F:\\GithubRepos\\AutoCreateModel",
+      "dst": "src\\NewModelApp\\.gitignore",
+      "rel": ".gitignore",
+      "bytes": 1247,
+      "sha256": "c48359be3a03be6c2a8f1ab6f8abd187bc7a07da0fb836ba7864706c887e91b4",
+      "verified": true
+    },
+    {
+      "src": "F:\\GithubRepos\\AutoCreateModel",
+      "dst": "src\\NewModelApp\\FEATURES.md",
+      "rel": "FEATURES.md",
+      "bytes": 1391,
+      "sha256": "028174162bad2751800082b0df2e2a19b9eea14f22e5fe9aaa985ed7c6c0c78b",
+      "verified": true
+    },
+    {
+      "src": "F:\\GithubRepos\\AutoCreateModel",
+      "dst": "src\\NewModelApp\\NewModelApp.m",
+      "rel": "NewModelApp.m",
+      "bytes": 69797,
+      "sha256": "b385bdd4ae49b59b9512477961f4387d953ba9ba4ecc64eb60f63e0ad7869e22",
+      "verified": true
+    },
+    {
+      "src": "F:\\GithubRepos\\AutoCreateModel",
+      "dst": "src\\NewModelApp\\README.md",
+      "rel": "README.md",
+      "bytes": 5245,
+      "sha256": "d710592b852f09e99413edb769538d1ce9c02ba59596b9b1951eebcc0b9de8a0",
+      "verified": true
+    },
+    {
+      "src": "F:\\GithubRepos\\AutoCreateSldd",
+      "dst": "src\\AutoCreateSldd\\+myPackage\\@Parameter\\Parameter.m",
+      "rel": "+myPackage\\@Parameter\\Parameter.m",
+      "bytes": 2165,
+      "sha256": "6ff4929f16065cd642a8a2df2c1bff1b33f09354a094a709f52b56368b6f1b48",
+      "verified": true
+    },
+    {
+      "src": "F:\\GithubRepos\\AutoCreateSldd",
+      "dst": "src\\AutoCreateSldd\\+myPackage\\@Signal\\Signal.m",
+      "rel": "+myPackage\\@Signal\\Signal.m",
+      "bytes": 2149,
+      "sha256": "1b5f6e66e8db9b1c9ab51118a5920821ad509055283505d2d287f9ba9580734d",
+      "verified": true
+    },
+    {
+      "src": "F:\\GithubRepos\\AutoCreateSldd",
+      "dst": "src\\AutoCreateSldd\\+myPackage\\csc_registration.m",
+      "rel": "+myPackage\\csc_registration.m",
+      "bytes": 28398,
+      "sha256": "0ad5995bfe3f5a3f48ffaf54c239dcd41e07f4685851152d69a715e2e0b48b17",
+      "verified": true
+    },
+    {
+      "src": "F:\\GithubRepos\\AutoCreateSldd",
+      "dst": "src\\AutoCreateSldd\\.gitignore",
+      "rel": ".gitignore",
+      "bytes": 2165,
+      "sha256": "31eb2bd1689a046ce66122fda98b5032e4d250e97c7ccde9687e710b99bc4a31",
+      "verified": true
+    },
+    {
+      "src": "F:\\GithubRepos\\AutoCreateSldd",
+      "dst": "src\\AutoCreateSldd\\AutoCreateSldd.mlappinstall",
+      "rel": "AutoCreateSldd.mlappinstall",
+      "bytes": 58739,
+      "sha256": "6082295b4d67641a13b475824534df85228573cbb7ee524a1eb031dc93837e35",
+      "verified": true
+    },
+    {
+      "src": "F:\\GithubRepos\\AutoCreateSldd",
+      "dst": "src\\AutoCreateSldd\\AutoCreateSldd.prj",
+      "rel": "AutoCreateSldd.prj",
+      "bytes": 3905,
+      "sha256": "6f6d00d7dec65860175976e450bba138b77d0da10d438df992dbb7b5aff4a282",
+      "verified": true
+    },
+    {
+      "src": "F:\\GithubRepos\\AutoCreateSldd",
+      "dst": "src\\AutoCreateSldd\\AutoCreateSldd_resources\\icon_16.png",
+      "rel": "AutoCreateSldd_resources\\icon_16.png",
+      "bytes": 780,
+      "sha256": "45ecce4708540733a71ee2f8927ebc5aa1b00b0153c047bf7b4bf32867427345",
+      "verified": true
+    },
+    {
+      "src": "F:\\GithubRepos\\AutoCreateSldd",
+      "dst": "src\\AutoCreateSldd\\AutoCreateSldd_resources\\icon_24.png",
+      "rel": "AutoCreateSldd_resources\\icon_24.png",
+      "bytes": 1118,
+      "sha256": "303dc24c33327675338e93e94d254b7934fd0aef034be19d95e85da47ffc5fed",
+      "verified": true
+    },
+    {
+      "src": "F:\\GithubRepos\\AutoCreateSldd",
+      "dst": "src\\AutoCreateSldd\\AutoCreateSldd_resources\\icon_48.png",
+      "rel": "AutoCreateSldd_resources\\icon_48.png",
+      "bytes": 2206,
+      "sha256": "5fbfd1ffab9f14d07581de34af5097f2f8597afe96fa22ddc06531536a6f41d9",
+      "verified": true
+    },
+    {
+      "src": "F:\\GithubRepos\\AutoCreateSldd",
+      "dst": "src\\AutoCreateSldd\\Excel2Workspace.m",
+      "rel": "Excel2Workspace.m",
+      "bytes": 18167,
+      "sha256": "cc89cec45c38f8aa0d833b1a4f56e2443323f16ff522c405284311441f9ee99c",
+      "verified": true
+    },
+    {
+      "src": "F:\\GithubRepos\\AutoCreateSldd",
+      "dst": "src\\AutoCreateSldd\\README.md",
+      "rel": "README.md",
+      "bytes": 7688,
+      "sha256": "1980ebe3da571f6a955f8fd6bd5dd88fd141c0164ed2b0544f1012da4d1185b3",
+      "verified": true
+    },
+    {
+      "src": "F:\\GithubRepos\\AutoCreateSldd",
+      "dst": "src\\AutoCreateSldd\\check_python_exe.m",
+      "rel": "check_python_exe.m",
+      "bytes": 3187,
+      "sha256": "078b261ce219599562ece9f1b1d20d2069c3d4c0f2fb7b1907d116b9e1002e5a",
+      "verified": true
+    },
+    {
+      "src": "F:\\GithubRepos\\AutoCreateSldd",
+      "dst": "src\\AutoCreateSldd\\generate_template.py",
+      "rel": "generate_template.py",
+      "bytes": 16715,
+      "sha256": "76402cdd5702dfc10c03e37d1ad9a7154a0f5dc7e67944d7a4df5cb84a98c7f6",
+      "verified": true
+    },
+    {
+      "src": "F:\\GithubRepos\\AutoCreateSldd",
+      "dst": "src\\AutoCreateSldd\\getPythonExe.m",
+      "rel": "getPythonExe.m",
+      "bytes": 2071,
+      "sha256": "ddd90b2ae141aeb2008c388f7ceee45d66d711e94778e61581a09bfb9f00fb74",
+      "verified": true
+    },
+    {
+      "src": "F:\\GithubRepos\\AutoCreateSldd",
+      "dst": "src\\AutoCreateSldd\\python_config.json",
+      "rel": "python_config.json",
+      "bytes": 65,
+      "sha256": "39265f8201d2f393152aad2c27f77d3b86e2119dad29890e098d5eb5d6d39078",
+      "verified": true
+    },
+    {
+      "src": "F:\\GithubRepos\\AutoCreateSldd",
+      "dst": "src\\AutoCreateSldd\\python_config_path.m",
+      "rel": "python_config_path.m",
+      "bytes": 598,
+      "sha256": "b3353aad370e52afa04d7088a3717f8a8aae6c0285041d5b4aef0d8dc55b8b15",
+      "verified": true
+    },
+    {
+      "src": "F:\\GithubRepos\\AutoCreateSldd",
+      "dst": "src\\AutoCreateSldd\\sldd_gui.m",
+      "rel": "sldd_gui.m",
+      "bytes": 53564,
+      "sha256": "b027203c6354fd15f8e801463a22f458d1568b2ab6fff1fea2f446e27da1bdc5",
+      "verified": true
+    },
+    {
+      "src": "F:\\GithubRepos\\AutoCreateSldd",
+      "dst": "src\\AutoCreateSldd\\sldd_python_config.m",
+      "rel": "sldd_python_config.m",
+      "bytes": 8360,
+      "sha256": "cb27c185676ee67d5b0e1e2516400e9ac894c9559b328cdcdf1662be9bec19e0",
+      "verified": true
+    },
+    {
+      "src": "F:\\GithubRepos\\AutoCreateSldd",
+      "dst": "src\\AutoCreateSldd\\sldd_template_config.m",
+      "rel": "sldd_template_config.m",
+      "bytes": 13411,
+      "sha256": "d8899209ab044d324399f6f308987a49c7110c74bdaa59dc76a2bd4d598fa89b",
+      "verified": true
+    },
+    {
+      "src": "F:\\GithubRepos\\AutoCreateSldd",
+      "dst": "src\\AutoCreateSldd\\sldd_to_excel.m",
+      "rel": "sldd_to_excel.m",
+      "bytes": 13606,
+      "sha256": "ab1fb36fab1b3404142e242aa5e72c0933a2ca7f6358034977a0500b99b4fde3",
+      "verified": true
+    },
+    {
+      "src": "F:\\GithubRepos\\AutoCreateSldd",
+      "dst": "src\\AutoCreateSldd\\sldd_to_excel_helper.py",
+      "rel": "sldd_to_excel_helper.py",
+      "bytes": 4260,
+      "sha256": "6c3182d2e38d0a45042c69cb05623670f60435b756468f4d9d118fddf2143f84",
+      "verified": true
+    },
+    {
+      "src": "F:\\GithubRepos\\AutoCreateSldd",
+      "dst": "src\\AutoCreateSldd\\template_config.json",
+      "rel": "template_config.json",
+      "bytes": 454,
+      "sha256": "ed403fb8f3bb6e735cfebb12f1089225d2f47eed968b00995055f6202427c8c0",
+      "verified": true
+    },
+    {
+      "src": "F:\\GithubRepos\\AutoCreateSldd",
+      "dst": "src\\AutoCreateSldd\\validateDataDictionary.m",
+      "rel": "validateDataDictionary.m",
+      "bytes": 12784,
+      "sha256": "80e759f1a484a40f89e9c2e1cc54bbaa30653c3d580438760300207b6d09f36f",
+      "verified": true
+    }
+  ]
+}
