@@ -12,6 +12,8 @@ classdef SimWorkbench < handle
         Log
         DictWorkbookPath = ''
         PortWorkbookPath = ''
+        AutoScriptFile = ''    % 上次自动推导的对象脚本路径（没被手改过才跟随字典工作簿切换）
+        AutoSlddFile = ''      % 上次自动推导的 .sldd 路径
         H = struct()
         Steps = {'读取工作簿','校验数据字典','生成对象脚本','写入数据字典','创建模型与端口','保存并打开'}
     end
@@ -219,7 +221,7 @@ classdef SimWorkbench < handle
             g.RowSpacing = 8;
             g.ColumnSpacing = 10;
 
-            app.pageTitle(g, '数据字典', 'Excel（8 表）↔ .sldd：校验、生成对象脚本、写入字典、反向同步', 1, [1, 2]);
+            app.pageTitle(g, '数据字典', 'Excel（8 表）↔ .sldd：导出模板、校验、生成对象脚本、写入字典、反向同步', 1, [1, 2]);
 
             left = uipanel(g, 'Title', '工作簿与操作');
             left.Layout.Row = 2;
@@ -233,6 +235,8 @@ classdef SimWorkbench < handle
 
             app.mkLabel(gl, '字典工作簿', 1, 1);
             app.H.dictEdit = app.mkEdit(gl, '', 1, 2);
+            % 在这一页直接改字典工作簿也要生效：同步到工作流页并重新读取。
+            app.H.dictEdit.ValueChangedFcn = @(src, ~) app.onDictWorkbookEdited(src.Value);
             app.mkButton(gl, '浏览…', 1, 3, @(~, ~) app.onBrowseDictWorkbook('dict'));
 
             app.mkLabel(gl, '工作表（可多选）', 2, [1, 3], 'FontWeight', 'bold');
@@ -275,7 +279,9 @@ classdef SimWorkbench < handle
                 'FontWeight','bold', 'BackgroundColor', [0.82, 0.90, 0.82]);
             app.mkButton(actions, '↔ SLDD → Excel', 2, [2, 3], @(~, ~) app.onDictAction('reverse'));
 
-            app.H.dictHint = app.mkLabel(gl, '提示：右侧显示校验问题或工作表预览。', 13, [1, 3], ...
+            app.mkButton(gl, '导出 Excel 模板…', 13, [1, 3], @(~, ~) app.onDictAction('template'), ...
+                'FontWeight', 'bold');
+            app.H.dictHint = app.mkLabel(gl, '提示：右侧显示校验问题或工作表预览。', 14, [1, 3], ...
                 'FontColor', [0.45, 0.45, 0.45]);
 
             right = uipanel(g, 'Title', '校验结果 / 预览');
@@ -579,9 +585,7 @@ classdef SimWorkbench < handle
             end
             app.DictWorkbookPath = fullfile(d, f);
             app.H.dictWorkbookEdit.Value = app.DictWorkbookPath;
-            if isfield(app.H, 'dictEdit') && isvalid(app.H.dictEdit)
-                app.H.dictEdit.Value = app.DictWorkbookPath;
-            end
+            app.syncDictWorkbookEdit();
             app.Settings.LastDictWorkbook = app.DictWorkbookPath;
             app.Settings.save();
             app.onReadWorkbooks();
@@ -606,6 +610,7 @@ classdef SimWorkbench < handle
             app.Log.section('读取工作簿');
             app.DictWorkbookPath = strtrim(app.H.dictWorkbookEdit.Value);
             app.PortWorkbookPath = strtrim(app.H.portWorkbookEdit.Value);
+            app.syncDictWorkbookEdit();
 
             if ~isempty(app.DictWorkbookPath)
                 info = swb.Workbook.detect(app.DictWorkbookPath);
@@ -648,13 +653,41 @@ classdef SimWorkbench < handle
         end
 
         function populateDefaultOutputs(app, dictPath)
+            %POPULATEDEFAULTOUTPUTS 按字典工作簿推导默认的对象脚本与 .sldd 路径。
+            %   换工作簿时默认名要跟着变；但用户手选过的路径不能冲掉，
+            %   所以只在字段为空、或仍等于上次自动填入的值时才覆盖。
             [d, base, ~] = fileparts(dictPath);
-            if isempty(strtrim(app.H.scriptEdit.Value))
-                app.H.scriptEdit.Value = fullfile(d, [base, '_objects.m']);
+            wantScript = fullfile(d, [base, '_objects.m']);
+            wantSldd = fullfile(d, [base, '.sldd']);
+            if app.followsAutoOutput(app.H.scriptEdit.Value, app.AutoScriptFile)
+                app.H.scriptEdit.Value = wantScript;
             end
-            if isempty(strtrim(app.H.slddEdit.Value))
-                app.H.slddEdit.Value = fullfile(d, [base, '.sldd']);
+            if app.followsAutoOutput(app.H.slddEdit.Value, app.AutoSlddFile)
+                app.H.slddEdit.Value = wantSldd;
             end
+            app.AutoScriptFile = wantScript;
+            app.AutoSlddFile = wantSldd;
+        end
+
+        function tf = followsAutoOutput(~, currentValue, autoValue)
+            %FOLLOWSAUTOOUTPUT 当前值是否还停留在自动填入的状态（未手改）。
+            cur = strtrim(currentValue);
+            tf = isempty(cur) || strcmp(cur, strtrim(autoValue));
+        end
+
+        function syncDictWorkbookEdit(app)
+            %SYNCDICTWORKBOOKEDIT 工作流页与数据字典页共用同一份字典工作簿路径。
+            if isfield(app.H, 'dictEdit') && isvalid(app.H.dictEdit)
+                if ~strcmp(strtrim(app.H.dictEdit.Value), app.DictWorkbookPath)
+                    app.H.dictEdit.Value = app.DictWorkbookPath;
+                end
+            end
+        end
+
+        function onDictWorkbookEdited(app, value)
+            %ONDICTWORKBOOKEDITED 数据字典页手改工作簿路径后，同步到工作流页并重新读取。
+            app.H.dictWorkbookEdit.Value = strtrim(value);
+            app.onReadWorkbooks();
         end
 
         function showPorts(app, inPorts, outPorts)
@@ -789,6 +822,58 @@ classdef SimWorkbench < handle
                                   'Config', app.Settings.TemplateConfig);
                     result = swb.ReverseSync.toWorkbook(sldd, dictPath, opts);
                     app.Log.info('反向同步完成，共 %d 张表。', numel(fieldnames(result.rows)));
+                case 'template'
+                    if ~app.hasService('swb.TemplateExport')
+                        app.notReady('swb.TemplateExport');
+                        return;
+                    end
+                    dictPath = strtrim(app.H.dictEdit.Value);
+                    if isempty(dictPath)
+                        dictPath = strtrim(app.H.dictWorkbookEdit.Value);
+                    end
+                    [f, d] = app.pickSaveFile({'*.xlsx', 'Excel 工作簿 (*.xlsx)'}, ...
+                        '导出 Excel 模板', swb.TemplateExport.defaultFile(dictPath));
+                    if isequal(f, 0)
+                        app.Log.info('已取消导出模板。');
+                        return;
+                    end
+                    outFile = fullfile(d, f);
+                    choice = app.confirmAndRaise(sprintf( ...
+                        ['模板将写到：%s' newline newline ...
+                         '含示例数据：写入示例行，并带 Config 下拉列表。' newline ...
+                         '空模板：只保留 8 张表的表头与 History 版本行。' newline ...
+                         'Python 不可用时自动退化为 MATLAB 基本模板。'], outFile), ...
+                        '导出 Excel 模板', {'含示例数据（推荐）', '空模板', '取消'}, 1, 3, 'question');
+                    if isempty(choice) || strcmp(choice, '取消')
+                        app.Log.info('已取消导出模板。');
+                        return;
+                    end
+                    opts = struct('Empty', strcmp(choice, '空模板'), ...
+                                  'Config', app.Settings.TemplateConfig, ...
+                                  'Exe', app.Settings.PythonPath, 'Log', app.Log);
+                    res = swb.TemplateExport.toWorkbook(outFile, opts);
+                    if ~res.ok
+                        app.Log.err('模板导出失败：%s', res.message);
+                        app.setSummary(sprintf('模板导出失败: %s', res.message));
+                        return;
+                    end
+                    if res.usedFallback
+                        how = 'MATLAB 基本模板';
+                    else
+                        how = 'generate_template.py';
+                    end
+                    app.Log.info('Excel 模板已导出（%s）：%s', how, res.file);
+                    app.updateStep(1, '完成', '模板已导出');
+                    app.setSummary(sprintf('Excel 模板: %s\n生成方式: %s', res.file, how));
+                    % 新模板就是当前字典工作簿：切过去并读入，省掉再点"浏览…"
+                    app.DictWorkbookPath = res.file;
+                    app.H.dictWorkbookEdit.Value = res.file;
+                    if isfield(app.H, 'dictEdit') && isvalid(app.H.dictEdit)
+                        app.H.dictEdit.Value = res.file;
+                    end
+                    app.Settings.LastDictWorkbook = res.file;
+                    app.Settings.save();
+                    app.onReadWorkbooks();
                 otherwise
                     app.Log.warn('未知操作: %s', kind);
             end

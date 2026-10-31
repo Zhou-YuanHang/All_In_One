@@ -1,5 +1,5 @@
 function final_verify(varargin)
-%FINAL_VERIFY 最终验收：打包 v1.6 → 干净安装 → 启动冒烟 → 全量回归。
+%FINAL_VERIFY 最终验收：打包 v1.7.1 → 干净安装 → 启动冒烟 → 全量回归。
 %  用法（无头）：
 %    matlab -batch "cd('F:\GithubRepos\All_In_One'); addpath('build'); final_verify"
 %  报告写到 build\final_report.txt（UTF-8，避免 GBK 控制台乱码），
@@ -10,7 +10,7 @@ function final_verify(varargin)
 %  无错误信息、不产出 .mlappinstall）。因此本脚本把打包/安装放在测试之前。
 
 p = inputParser;
-p.addParameter('Version', '1.6', @(x) ischar(x) || isstring(x));
+p.addParameter('Version', '1.7.1', @(x) ischar(x) || isstring(x));
 p.addParameter('SkipTests', false, @(x) islogical(x) || isnumeric(x));
 p.parse(varargin{:});
 opt = p.Results;
@@ -76,6 +76,22 @@ hasGuard = contains(txt, 'unexpectedModelFile');
 fprintf('INSTALLED_HAS_FIXES external=%d guard=%d\n', hasExt, hasGuard);
 fprintf(fid, '\n安装副本 ModelBuilder 含外部同名检测=%d，含保存后校验=%d\n', hasExt, hasGuard);
 
+% ---------- 4b. 安装副本的 resources：该有的在、不该有的没有 ----------
+% App 打包默认排除 app/resources/+myPackage（见 make_appinstaller 的
+% 'ExcludeResources'），装到用户机器后不能出现，否则会遮蔽用户自己的同名包。
+% 同时确认排除没有误伤运行时真正需要的资源（Python 模板脚本 / 图标 / Config）。
+resDir = fullfile(inst.location, 'resources');
+hasRes = exist(resDir, 'dir') == 7;
+hasPy = hasRes && exist(fullfile(resDir, 'generate_template.py'), 'file') == 2;
+hasCfg = hasRes && exist(fullfile(resDir, 'template_config.json'), 'file') == 2;
+hasMyPkg = exist(fullfile(resDir, '+myPackage'), 'dir') == 7;
+checksOk = hasRes && hasPy && hasCfg && ~hasMyPkg;
+fprintf('INSTALLED_RESOURCES=%d GEN_PY=%d CONFIG_JSON=%d INSTALLED_HAS_MYPACKAGE=%d\n', ...
+    hasRes, hasPy, hasCfg, hasMyPkg);
+fprintf(fid, ['\n安装副本 resources 目录=%d，含 generate_template.py=%d，' ...
+    '含 template_config.json=%d，含 resources/+myPackage=%d（期望 0，App 包已排除）\n'], ...
+    hasRes, hasPy, hasCfg, hasMyPkg);
+
 % ---------- 5. 全量回归 ----------
 fprintf('STEP=TEST\n');
 t0 = tic;
@@ -110,6 +126,10 @@ if total > 0
     end
 end
 
-fprintf(fid, '\nOK\n');
+if checksOk
+    fprintf(fid, '\nOK\n');
+else
+    fprintf(fid, '\nFAIL\n');
+end
 fprintf('DONE\n');
 end

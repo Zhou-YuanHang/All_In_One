@@ -4,7 +4,7 @@ classdef ReverseSync
     %     读 Design Data 本地条目 -> 分类 Signal/Parameter/Const/Bus/BusElement/Enum
     %     -> 组装与旧实现一致的 JSON -> 调用 sldd_to_excel_helper.py 写回 Excel。
     %   目标工作簿不存在时：优先 generate_template.py --empty 生成；Python 不可用时
-    %   退化为 MATLAB writecell 的基本模板（表头/列序由 Schema 决定）。
+    %   退化为 MATLAB writecell 的基本模板（实现见 swb.TemplateExport.writeMatlabBasic）。
     %
     %   result = swb.ReverseSync.toWorkbook(dictPath, workbookPath, opts)
     %     opts: CleanExcel(false), PythonService/Exe, Log
@@ -71,7 +71,7 @@ classdef ReverseSync
                     end
                 end
                 if ~created
-                    if swb.ReverseSync.writeMatlabTemplate(workbookPath, opts.Config)
+                    if swb.TemplateExport.writeMatlabBasic(workbookPath, opts.Config, '反向同步创建')
                         created = true;
                         result = swb.ReverseSync.note(result, opts, ...
                             '目标工作簿不存在，已用 MATLAB writecell 生成基本模板。');
@@ -437,49 +437,6 @@ classdef ReverseSync
                 payload.rows = wrapped;
             else
                 payload.rows = rows(:)';
-            end
-        end
-
-        %% ---------- MATLAB 基本模板（Python 不可用时的退化路径） ----------
-        function ok = writeMatlabTemplate(workbookPath, cfg)
-            ok = false;
-            try
-                outDir = fileparts(workbookPath);
-                if ~isempty(outDir) && ~isfolder(outDir)
-                    mkdir(outDir);
-                end
-                if isfile(workbookPath)
-                    delete(workbookPath);
-                end
-                hist = [{'Version', 'ChangeDate', 'Changer', 'Content'}; ...
-                        {'V1.0', char(datetime('today', 'Format', 'yyyy-MM-dd')), ...
-                         'SimWorkbench', '反向同步创建'}];
-                writecell(hist, workbookPath, 'Sheet', 'History');
-                list = {'Signal', 'Parameter', 'Const', 'Enum', 'Bus', 'BusElement'};
-                for k = 1:numel(list)
-                    writecell(swb.Schema.dictColumns(list{k}), workbookPath, 'Sheet', list{k});
-                end
-                if nargin < 2 || isempty(cfg)
-                    cfg = swb.Schema.defaultConfig();
-                end
-                cfg = swb.TemplateConfig.normalize(cfg);
-                cols = swb.Schema.configColumns();
-                maxLen = 0;
-                for c = 1:numel(cols)
-                    maxLen = max(maxLen, numel(cfg.(cols(c).key)));
-                end
-                data = cell(maxLen + 1, numel(cols));
-                for c = 1:numel(cols)
-                    data{1, c} = cols(c).header;
-                    vals = cfg.(cols(c).key);
-                    for r = 1:numel(vals)
-                        data{r + 1, c} = vals{r};
-                    end
-                end
-                writecell(data, workbookPath, 'Sheet', 'Config');
-                ok = isfile(workbookPath);
-            catch
-                ok = false;
             end
         end
 

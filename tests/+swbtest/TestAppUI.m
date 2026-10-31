@@ -49,6 +49,21 @@ classdef TestAppUI < swbtest.SwbTestBase
                 '设置页应显示当前候选值摘要');
         end
 
+function testTemplateExportIsWired(tc)
+            % 旧工具 sldd_gui.m 的「生成模板」不能在迁移中丢掉：
+            % 数据字典页必须有按钮，且接到 swb.TemplateExport 服务。
+            root = fileparts(fileparts(fileparts(mfilename('fullpath'))));
+            src = fileread(fullfile(root, 'app', 'SimWorkbench.m'));
+            tc.verifyTrue(contains(src, '导出 Excel 模板'), ...
+                '数据字典页应有「导出 Excel 模板…」按钮');
+            tc.verifyTrue(contains(src, 'onDictAction(''template'')'), ...
+                '按钮应触发 onDictAction(''template'')');
+            tc.verifyTrue(contains(src, 'swb.TemplateExport.toWorkbook'), ...
+                '导出动作应调用 swb.TemplateExport.toWorkbook');
+            tc.verifyTrue(contains(src, 'swb.TemplateExport.defaultFile'), ...
+                '默认文件名应由 swb.TemplateExport.defaultFile 决定');
+        end
+
         function testModelNameIsEditableDropdown(tc)
             % 「模型与端口」的模型名称要既能手写、也能选现有模型：
             % 必须是可编辑 uidropdown，并带刷新候选与选中后切目录的回调。
@@ -116,6 +131,73 @@ classdef TestAppUI < swbtest.SwbTestBase
             tc.verifyTrue(isvalid(app.UIFigure), '应创建主窗口');
             delete(app);
             tc.verifyFalse(isvalid(app));
+        end
+
+        function testSwitchingDictWorkbookUpdatesDerivedOutputs(tc)
+            % 换一份字典工作簿后，对象脚本 / .sldd 的默认名要跟着变。
+            % 旧实现只在字段为空时填一次，第二次选工作簿就停在旧名字上。
+            wbA = tc.makeNamedDict('alpha');
+            wbB = tc.makeNamedDict('beta');
+            app = SimWorkbench('Visible', 'off');
+            tc.addTeardown(@() delete(app));
+
+            app.populateDemo(wbA);
+            tc.verifyEqual(app.H.scriptEdit.Value, fullfile(fileparts(wbA), 'alpha_objects.m'));
+            tc.verifyEqual(app.H.slddEdit.Value, fullfile(fileparts(wbA), 'alpha.sldd'));
+
+            app.populateDemo(wbB);
+            tc.verifyEqual(app.H.scriptEdit.Value, fullfile(fileparts(wbB), 'beta_objects.m'), ...
+                '换工作簿后对象脚本默认名应更新');
+            tc.verifyEqual(app.H.slddEdit.Value, fullfile(fileparts(wbB), 'beta.sldd'), ...
+                '换工作簿后 .sldd 默认名应更新');
+            tc.verifyEqual(app.H.dictEdit.Value, wbB, ...
+                '数据字典页的字典工作簿应与工作流页一致');
+        end
+
+        function testManualOutputPathSurvivesWorkbookSwitch(tc)
+            % 手选过的输出路径不能被换工作簿冲掉；没手选的那个仍跟随工作簿。
+            wbA = tc.makeNamedDict('alpha');
+            wbB = tc.makeNamedDict('beta');
+            app = SimWorkbench('Visible', 'off');
+            tc.addTeardown(@() delete(app));
+
+            app.populateDemo(wbA);
+            custom = fullfile(fileparts(wbA), 'my_objects.m');
+            app.H.scriptEdit.Value = custom;
+
+            app.populateDemo(wbB);
+            tc.verifyEqual(app.H.scriptEdit.Value, custom, '手选的对象脚本路径不能被覆盖');
+            tc.verifyEqual(app.H.slddEdit.Value, fullfile(fileparts(wbB), 'beta.sldd'), ...
+                '没手选的 .sldd 仍应跟随工作簿');
+        end
+
+        function testDictTabWorkbookEditRepopulates(tc)
+            % 在数据字典页直接改「字典工作簿」也要生效：同步到工作流页并重新读取。
+            wbA = tc.makeNamedDict('alpha');
+            wbB = tc.makeNamedDict('beta');
+            app = SimWorkbench('Visible', 'off');
+            tc.addTeardown(@() delete(app));
+
+            app.populateDemo(wbA);
+            app.H.dictEdit.Value = wbB;
+            app.H.dictEdit.ValueChangedFcn(app.H.dictEdit, []);
+
+            tc.verifyEqual(app.H.dictWorkbookEdit.Value, wbB);
+            tc.verifyEqual(app.DictWorkbookPath, wbB);
+            tc.verifyEqual(app.H.scriptEdit.Value, fullfile(fileparts(wbB), 'beta_objects.m'));
+        end
+    end
+
+    methods (Access = private)
+        function f = makeNamedDict(tc, name)
+            % 造一份合法字典工作簿并改成指定文件名（默认文件名固定为 dict_sample.xlsx）。
+            d = tc.tmpDir();
+            src = swbfixture.Workbooks.makeDict(d);
+            f = fullfile(d, [name '.xlsx']);
+            if isfile(f)
+                delete(f);
+            end
+            movefile(src, f);
         end
     end
 end
