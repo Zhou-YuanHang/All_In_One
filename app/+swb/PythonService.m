@@ -9,7 +9,7 @@ classdef PythonService
     %   r = swb.PythonService.generateTemplate(outFile, opts)   % opts: Empty, Config, Exe
     %   r = swb.PythonService.runReverseHelper(jsonFile, opts) % opts: Exe
     %
-    %   脚本位置：优先 app/resources/*.py，回退 src/AutoCreateSldd/*.py（绝对路径 + system）。
+    %   脚本位置：app/resources/*.py（绝对路径 + system）。
 
     methods (Static)
         function exe = resolve(settings)
@@ -106,7 +106,7 @@ classdef PythonService
             script = swb.PythonService.scriptPath('generate_template.py');
             r.script = script;
             if isempty(script)
-                r.message = '找不到 generate_template.py（app/resources 与 src/AutoCreateSldd 都不存在）。';
+                r.message = '找不到 generate_template.py（app/resources 下缺失）。';
                 return;
             end
             [outDir, ~, ~] = fileparts(outFile);
@@ -171,7 +171,7 @@ classdef PythonService
             script = swb.PythonService.scriptPath('sldd_to_excel_helper.py');
             r.script = script;
             if isempty(script)
-                r.message = '找不到 sldd_to_excel_helper.py（app/resources 与 src/AutoCreateSldd 都不存在）。';
+                r.message = '找不到 sldd_to_excel_helper.py（app/resources 下缺失）。';
                 return;
             end
             cmd = sprintf('"%s" "%s" "%s"', exe, script, jsonFile);
@@ -186,21 +186,16 @@ classdef PythonService
         end
 
         function p = scriptPath(name)
-            % Python 脚本绝对路径：app/resources 优先，回退 src/AutoCreateSldd
+            % Python 脚本绝对路径：app/resources
             p = '';
             if nargin < 1 || isempty(name)
                 return;
             end
             here = fileparts(mfilename('fullpath'));
             appRoot = fileparts(here);
-            repoRoot = fileparts(appRoot);
-            candidates = {fullfile(appRoot, 'resources', char(name)), ...
-                          fullfile(repoRoot, 'src', 'AutoCreateSldd', char(name))};
-            for k = 1:numel(candidates)
-                if isfile(candidates{k})
-                    p = candidates{k};
-                    return;
-                end
+            f = fullfile(appRoot, 'resources', char(name));
+            if isfile(f)
+                p = f;
             end
         end
     end

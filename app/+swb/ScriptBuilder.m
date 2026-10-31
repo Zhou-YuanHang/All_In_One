@@ -1,6 +1,6 @@
 classdef ScriptBuilder
     %SWB.SCRIPTBUILDER Excel 数据字典 -> Simulink 对象 M 脚本（无 UI）。
-    %   行为对齐旧 src/AutoCreateSldd/Excel2Workspace.m 的 5 参数模式：
+    %   行为对齐旧 Excel2Workspace.m（原 src/AutoCreateSldd，已移除）的 5 参数模式：
     %     - 输出对象赋值文本（含 StorageClass/自定义存储类/CoderInfo.CustomAttributes）
     %     - BusElement 使用 saveVarsTmp{1} 临时变量写法
     %     - Enum 生成独立的 classdef .m 文件

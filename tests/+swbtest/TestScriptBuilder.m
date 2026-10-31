@@ -1,6 +1,7 @@
 classdef TestScriptBuilder < matlab.unittest.TestCase
     %SWB.TEST.SCRIPTBUILDER 数据对象脚本生成测试。
-    %   与旧 Excel2Workspace 5 参数模式做 golden 文本对比（忽略时间戳行与行尾空白），
+    %   与冻结的旧 Excel2Workspace 输出做 golden 文本对比（忽略时间戳行与行尾空白），
+    %   冻结样本在 <repo>/tests/+swbfixture/golden/（旧 src/ 已移除）。
     %   并断言关键行：CoderInfo.CustomAttributes、BusElement saveVarsTmp、枚举 classdef、
     %   Parameter Dimensions 在 Value 之前、坏 CSC 行的 try/catch 包裹。
 
@@ -19,46 +20,29 @@ classdef TestScriptBuilder < matlab.unittest.TestCase
     methods (Test)
         function testGoldenMatchesLegacy(tc)
             wb = swbfixture.Workbooks.makeDict(tc.TempDir);
-            tc.applyFixture(matlab.unittest.fixtures.PathFixture( ...
-                swbtest.TestScriptBuilder.legacyDir()));
 
-            oldDir = fullfile(tc.TempDir, 'old');
             newDir = fullfile(tc.TempDir, 'new');
-            mkdir(oldDir); mkdir(newDir);
-            oldOut = fullfile(oldDir, 'objects.m');
+            mkdir(newDir);
             newOut = fullfile(newDir, 'objects.m');
+            goldenDir = fullfile(fileparts(fileparts(mfilename('fullpath'))), '+swbfixture', 'golden');
 
-            allSheets = cellstr(string(sheetnames(wb)));
-            imp = swb.Schema.importableSheetNames();
-            present = {};
-            for k = 1:numel(imp)
-                if any(strcmpi(allSheets, imp{k}))
-                    present{end+1} = imp{k}; %#ok<AGROW>
-                end
-            end
-            sel = zeros(1, numel(present));
-            for k = 1:numel(present)
-                sel(k) = find(strcmpi(allSheets, present{k}), 1);
-            end
-
-            Excel2Workspace(allSheets, wb, oldOut, 'dict_sample.xlsx', sel);
             r = swb.ScriptBuilder.build(wb, {}, newOut);
             tc.verifyTrue(r.ok, 'ScriptBuilder.build 应成功。');
-            tc.verifyTrue(isfile(oldOut) && isfile(newOut));
+            tc.verifyTrue(isfile(newOut));
             tc.verifyEqual(r.writtenFile, newOut);
 
-            oldLines = swbtest.TestScriptBuilder.normLines(oldOut);
+            oldLines = swbtest.TestScriptBuilder.normLines(fullfile(goldenDir, 'objects_legacy.txt'));
             newLines = swbtest.TestScriptBuilder.normLines(newOut);
             tc.verifyEqual(newLines, oldLines, ...
                 sprintf('生成脚本文本应与旧实现一致（旧 %d 行 / 新 %d 行）。', ...
                 numel(oldLines), numel(newLines)));
 
             tc.verifyEqual(numel(r.enumFiles), 1);
-            oldEnum = fullfile(oldDir, 'GEAR.m');
             newEnum = fullfile(newDir, 'GEAR.m');
-            tc.verifyTrue(isfile(oldEnum) && isfile(newEnum), '枚举 classdef 文件应存在。');
+            tc.verifyTrue(isfile(newEnum), '枚举 classdef 文件应存在。');
             tc.verifyEqual(swbtest.TestScriptBuilder.normLines(newEnum), ...
-                swbtest.TestScriptBuilder.normLines(oldEnum), '枚举 classdef 文件应与旧实现一致。');
+                swbtest.TestScriptBuilder.normLines(fullfile(goldenDir, 'gear_legacy.txt')), ...
+                '枚举 classdef 文件应与旧实现一致。');
         end
 
         function testKeyLines(tc)
@@ -131,20 +115,6 @@ classdef TestScriptBuilder < matlab.unittest.TestCase
     end
 
     methods (Static)
-        function d = legacyDir()
-            % 以本测试文件位置为锚点定位仓库根目录。
-            % 不能用 which('swb.Schema')：装了 .mlappinstall 之后，安装副本
-            % 一旦在路径上（或排在仓库 app 之前），会解析到
-            % "<Apps>\SimWorkbench\+swb\Schema.m"，仓库根目录就算错。
-            here = fileparts(mfilename('fullpath'));      % tests\+swbtest
-            repoRoot = fileparts(fileparts(here));        % 仓库根目录
-            d = fullfile(repoRoot, 'src', 'AutoCreateSldd');
-            if ~isfolder(d)                                % 兜底：按 swb 包反推
-                appDir = fileparts(fileparts(which('swb.Schema')));
-                d = fullfile(fileparts(appDir), 'src', 'AutoCreateSldd');
-            end
-        end
-
         function out = normLines(p)
             txt = fileread(p);
             c = regexp(txt, '\r\n|\n|\r', 'split');

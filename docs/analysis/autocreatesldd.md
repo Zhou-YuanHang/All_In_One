@@ -1,7 +1,7 @@
 # AutoCreateSldd — deep analysis (data-dictionary app)
 
-Provenance: `src/AutoCreateSldd` from repo **AutoCreateSldd** @ `3e731ba7` (copied 2026-10-29, see `docs/analysis/source-manifest.json`).
-Scope: read-only static analysis; MATLAB/Simulink not installed, Python not executed. All paths below are relative to `src/AutoCreateSldd/`.
+Provenance: repo **AutoCreateSldd** @ `3e731ba7`（旧副本 `src/AutoCreateSldd` 已于 2026-10-31 移除，原仓库 `F:\GithubRepos\AutoCreateSldd` 仍在）。
+Scope: read-only static analysis; MATLAB/Simulink not installed, Python not executed. Paths below are relative to the original repo root (formerly `src/AutoCreateSldd/`).
 Line counts checked: sldd_gui.m 1189, Excel2Workspace.m 557, validateDataDictionary.m 353, sldd_to_excel.m 380, sldd_template_config.m 413, sldd_python_config.m 243, check_python_exe.m 114, getPythonExe.m 73, python_config_path.m 20, generate_template.py 408, sldd_to_excel_helper.py 115, +myPackage/csc_registration.m 711, @Signal/Signal.m 73, @Parameter/Parameter.m 73.
 
 ---

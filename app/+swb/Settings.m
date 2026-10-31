@@ -1,7 +1,7 @@
 classdef Settings < handle
     %SWB.SETTINGS 机器级配置（prefdir/simworkbench.json）。
     %   旧工具把 python_config.json / template_config.json 放在 App 目录里，
-    %   安装到 Program Files 后不可写；这里统一放到 prefdir，并支持一次性迁移旧配置。
+    %   安装到 Program Files 后不可写；这里统一放到 prefdir。
 
     properties
         File = ''
@@ -89,43 +89,6 @@ classdef Settings < handle
             catch
                 % 配置写失败不阻断业务
             end
-        end
-
-        function ok = migrateLegacy(obj, legacyDir)
-            % 从旧 AutoCreateSldd 目录迁移 python_config.json / template_config.json
-            ok = false;
-            if nargin < 2 || isempty(legacyDir) || ~isfolder(legacyDir)
-                return;
-            end
-            pFile = fullfile(legacyDir, 'python_config.json');
-            if isfile(pFile) && isempty(strtrim(obj.PythonPath))
-                try
-                    s = jsondecode(fileread(pFile));
-                    if isfield(s, 'PythonPath') && (ischar(s.PythonPath) || isstring(s.PythonPath))
-                        obj.PythonPath = char(s.PythonPath);
-                    end
-                catch
-                end
-            end
-            tFile = fullfile(legacyDir, 'template_config.json');
-            if isfile(tFile)
-                try
-                    s = jsondecode(fileread(tFile));
-                    if isstruct(s)
-                        cfg = swb.Schema.defaultConfig();
-                        keys = fieldnames(cfg);
-                        for k = 1:numel(keys)
-                            if isfield(s, keys{k}) && iscell(s.(keys{k}))
-                                cfg.(keys{k}) = cellfun(@char, s.(keys{k})(:)', 'UniformOutput', false);
-                            end
-                        end
-                        obj.TemplateConfig = cfg;
-                    end
-                catch
-                end
-            end
-            obj.save();
-            ok = true;
         end
 
         function tf = hasPythonPath(obj)

@@ -1,6 +1,6 @@
 # NewModelApp — Model-Creation App: Deep Analysis
 
-Source: `src/NewModelApp/` (repo AutoCreateModel, commit `0cc5db5`). Files: `NewModelApp.m` (1546 lines),
+Source: repo AutoCreateModel, commit `0cc5db5`（旧副本 `src/NewModelApp/` 已于 2026-10-31 移除，原仓库 `F:\GithubRepos\AutoCreateModel` 仍在）。Files: `NewModelApp.m` (1546 lines),
 `README.md` (109), `FEATURES.md` (14), `.gitignore` (93). Read-only static analysis (no MATLAB available).
 
 ## 1. Purpose & entry points
@@ -14,7 +14,7 @@ model and can export existing ports back to Excel.
 - Entry: run `NewModelApp` (README:8). Constructor 69–72 → `createComponents()` (86–282). No output-argument wrapper, so a bare
   call leaves the object in `ans`; the window *is* the app.
 - Packaging: **none** — no `.prj`, no `.mlappinstall`, no icon/resources, no version string (contrast
-  `src/AutoCreateSldd/AutoCreateSldd.prj` + `.mlappinstall` + `AutoCreateSldd_resources/`).
+  the AutoCreateSldd repo, which ships `.prj` + `.mlappinstall` + `AutoCreateSldd_resources/`).
 - Programmatic API: **none**. All operations are `methods (Access = private)` on the UI class and write into `app.StatusLabel`;
   model creation cannot be invoked without a figure.
 - Lifecycle: `delete(app)` (74–79) deletes `UIFigure`; no `CloseRequestFcn`, so a window close is not routed back to `app.delete`

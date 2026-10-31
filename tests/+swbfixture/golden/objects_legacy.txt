@@ -1,0 +1,75 @@
+%% 自动生成的数据对象文件
+%% 创建时间: 2026-10-31 21:59:36
+%% 来源 Excel: dict_sample.xlsx
+%%
+%% 在 MATLAB 中运行此脚本即可在工作区创建所有 Simulink 对象
+
+%% ================ Bus 对象 ================
+
+%% ----- Bus: FaultBus -----
+FaultBus = Simulink.Bus;
+FaultBus.Description = 'fault bus';
+FaultBus.HeaderFile = 'fault.h';
+FaultBus.Alignment = -1;
+FaultBus.PreserveElementDimensions = false;
+FaultBus.DataScope = 'Auto';
+
+
+%% ================ Signal 对象 ================
+
+%% ----- Signal: M_Sig -----
+M_Sig = myPackage.Signal;
+M_Sig.CoderInfo.StorageClass = 'ExportedGlobal';
+try M_Sig.CoderInfo.CustomAttributes.HeaderFile = 'MCU.h'; catch, end
+try M_Sig.CoderInfo.CustomAttributes.DefinitionFile = 'MCU.c'; catch, end
+M_Sig.DataType = 'single';
+M_Sig.InitialValue = '0';
+M_Sig.Min = 0;
+M_Sig.Max = 100;
+M_Sig.Description = 'signal desc';
+M_Sig.DocUnits = 'm';
+M_Sig.Dimensions = 1;
+M_Sig.Complexity = 'real';
+
+
+%% ================ Parameter 对象 ================
+
+%% ----- Parameter: Kp -----
+Kp = myPackage.Parameter;
+Kp.CoderInfo.StorageClass = 'Custom';
+Kp.CoderInfo.CustomStorageClass = 'YS_SelectRAMPara';
+try Kp.CoderInfo.CustomAttributes.HeaderFile = 'MCU.h'; catch, end
+try Kp.CoderInfo.CustomAttributes.DefinitionFile = 'MCU.c'; catch, end
+Kp.DataType = 'double';
+Kp.Dimensions = 1;
+Kp.Value = 0.35;
+Kp.Min = 0;
+Kp.Max = 10;
+Kp.Description = 'param desc';
+Kp.DocUnits = '-';
+Kp.Complexity = 'real';
+
+
+%% ================ Const 对象 (Parameter + 存储类) ================
+
+%% ----- Const: Mode -----
+Mode = myPackage.Parameter;
+Mode.CoderInfo.StorageClass = 'Custom';
+Mode.CoderInfo.CustomStorageClass = 'Define';
+Mode.DataType = 'uint8';
+Mode.Value = 1;
+Mode.CoderInfo.CustomAttributes.HeaderFile = 'Define.h';
+
+
+%% ================ BusElement 定义 ================
+
+%% ----- 为 Bus 'FaultBus' 创建 1 个元素 -----
+saveVarsTmp{1} = Simulink.BusElement;
+saveVarsTmp{1}.Name = 'IcSensorFault';
+saveVarsTmp{1}.Description = 'current sensor fault';
+saveVarsTmp{1}.DataType = 'uint8';
+saveVarsTmp{1}.Dimensions = 1;
+saveVarsTmp{1}.DocUnits = '-';
+FaultBus.Elements = saveVarsTmp{1};
+clear saveVarsTmp;
+

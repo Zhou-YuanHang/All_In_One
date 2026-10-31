@@ -1,6 +1,6 @@
 classdef ReverseSync
     %SWB.REVERSESYNC 数据字典 .sldd -> Excel 反向同步（MATLAB 侧编排）。
-    %   迁移旧 src/AutoCreateSldd/sldd_to_excel.m：
+    %   迁移旧 sldd_to_excel.m（原 src/AutoCreateSldd，已移除）：
     %     读 Design Data 本地条目 -> 分类 Signal/Parameter/Const/Bus/BusElement/Enum
     %     -> 组装与旧实现一致的 JSON -> 调用 sldd_to_excel_helper.py 写回 Excel。
     %   目标工作簿不存在时：优先 generate_template.py --empty 生成；Python 不可用时
