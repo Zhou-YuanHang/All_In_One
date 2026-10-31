@@ -313,8 +313,17 @@ classdef SimWorkbench < handle
             gl.RowSpacing = 6;
 
             app.mkLabel(gl, '模型名称', 1, 1);
-            app.H.modelNameEdit = app.mkEdit(gl, d.ModelName, 1, 2);
-            app.mkLabel(gl, '（需合法标识符）', 1, 3, 'FontColor', [0.5,0.5,0.5]);
+            % 可编辑下拉框：既能手写模型名称，也能直接选一个现有模型（已打开或保存目录里的 .slx）。
+            app.H.modelNameEdit = uidropdown(gl, 'Editable', 'on', ...
+                'Items', {d.ModelName}, 'Value', d.ModelName, ...
+                'Tooltip', '直接输入模型名称，或从下拉列表选择已打开 / 保存目录中的现有模型');
+            app.H.modelNameEdit.Layout.Row = 1;
+            app.H.modelNameEdit.Layout.Column = 2;
+            app.H.modelNameEdit.ValueChangedFcn = @(~, ~) app.onModelNameChanged();
+            app.H.modelRefreshButton = app.mkButton(gl, '刷新', 1, 3, ...
+                @(~, ~) app.refreshModelCandidates(), ...
+                'Tooltip', '重新扫描已打开模型和保存目录中的 .slx');
+            app.refreshModelCandidates();
 
             app.mkLabel(gl, '保存目录', 2, 1);
             app.H.modelFolderEdit = app.mkEdit(gl, pwd, 2, 2);
@@ -383,13 +392,13 @@ classdef SimWorkbench < handle
             g.RowHeight = {'fit', '1x'};
             g.Padding = [12, 12, 12, 12];
             g.RowSpacing = 8;
-            app.pageTitle(g, '设置', '机器级配置保存在 prefdir/simworkbench.json（可迁移旧 python_config/template_config）', 1);
+            app.pageTitle(g, '设置', '机器级配置保存在 prefdir/simworkbench.json', 1);
 
             p = uipanel(g, 'Title', '环境与默认值');
             p.Layout.Row = 2;
             p.Layout.Column = 1;
-            gp = uigridlayout(p, [8, 4]);
-            gp.RowHeight = [repmat({'fit'}, 1, 6), {'fit','fit'}];
+            gp = uigridlayout(p, [7, 4]);
+            gp.RowHeight = repmat({'fit'}, 1, 7);
             gp.ColumnWidth = {130, '1x', 90, 110};
             gp.Padding = [12, 10, 12, 10];
             gp.RowSpacing = 8;
@@ -414,20 +423,16 @@ classdef SimWorkbench < handle
                 'FontColor', [0.45,0.45,0.45], 'WordWrap', 'on');
             app.mkButton(gp, '编辑…', 5, 3, @(~, ~) app.onEditTemplateConfig());
 
-            app.mkLabel(gp, '旧配置迁移', 6, 1);
-            app.mkLabel(gp, '从 src/AutoCreateSldd 读取旧的 python_config.json / template_config.json 并写入新配置', ...
-                6, [2, 4], 'FontColor', [0.45,0.45,0.45]);
-            app.H.settingsStatus = app.mkLabel(gp, '', 7, [1, 4], 'FontColor', [0.45,0.45,0.45]);
+            app.H.settingsStatus = app.mkLabel(gp, '', 6, [1, 4], 'FontColor', [0.45,0.45,0.45]);
 
-            btns = uigridlayout(gp, [1, 3]);
-            btns.Layout.Row = 8;
+            btns = uigridlayout(gp, [1, 2]);
+            btns.Layout.Row = 7;
             btns.Layout.Column = [1, 4];
-            btns.ColumnWidth = {140, 140, 260};
+            btns.ColumnWidth = {140, 140};
             btns.Padding = [0, 0, 0, 0];
             app.mkButton(btns, '保存设置', 1, 1, @(~, ~) app.onSaveSettings(), ...
                 'FontWeight','bold', 'BackgroundColor', [0.15, 0.55, 0.15], 'FontColor', [1,1,1]);
             app.mkButton(btns, '重新读取', 1, 2, @(~, ~) app.applySettingsToUI());
-            app.mkButton(btns, '迁移旧配置…', 1, 3, @(~, ~) app.onMigrateLegacy());
         end
 
         % ---------------- 日志页 ----------------
@@ -840,6 +845,7 @@ classdef SimWorkbench < handle
                 return;
             end
             app.H.modelFolderEdit.Value = d;
+            app.refreshModelCandidates();
         end
 
         function onBrowseTlc(app)
@@ -969,7 +975,14 @@ classdef SimWorkbench < handle
                         app.Log.warn('模型不存在，无法导出: %s', modelPath);
                         return;
                     end
-                    [f, d] = app.pickSaveFile({'*.xlsx', 'Excel 文件 (*.xlsx)'}, '导出端口到 Excel', 'ports.xlsx');
+                    % 默认文件名固定为「模型名称_ports」，起始目录就是模型所在目录。
+                    folder = strtrim(app.H.modelFolderEdit.Value);
+                    if isempty(folder)
+                        folder = pwd;
+                    end
+                    defName = fullfile(folder, swb.PortExport.defaultFileName( ...
+                        strtrim(app.H.modelNameEdit.Value)));
+                    [f, d] = app.pickSaveFile({'*.xlsx', 'Excel 文件 (*.xlsx)'}, '导出端口到 Excel', defName);
                     if isequal(f, 0)
                         return;
                     end
@@ -981,6 +994,12 @@ classdef SimWorkbench < handle
                         app.H.modelStatusLabel.Text = sprintf('✓ 端口已导出（%d 输入 / %d 输出）', ...
                             result.inputCount, result.outputCount);
                         app.H.modelStatusLabel.FontColor = [0.10, 0.50, 0.10];
+                        % 导出的文件就是当前的端口工作簿：接着点「更新端口」即可把改动写回模型。
+                        if isfile(result.file) && isfield(app.H, 'modelPortEdit') ...
+                                && isvalid(app.H.modelPortEdit)
+                            app.H.modelPortEdit.Value = result.file;
+                            app.Log.info('端口工作簿已切换到: %s', result.file);
+                        end
                     else
                         app.Log.err('导出失败：%s', result.errorText);
                         app.H.modelStatusLabel.Text = ['✗ ', result.errorText];
@@ -1136,20 +1155,6 @@ classdef SimWorkbench < handle
             app.raiseApp();
         end
 
-        function onMigrateLegacy(app)
-            here = fileparts(mfilename('fullpath'));
-            root = fileparts(here);
-            legacyDir = fullfile(root, 'src', 'AutoCreateSldd');
-            ok = app.Settings.migrateLegacy(legacyDir);
-            if ok
-                app.applySettingsToUI();
-                app.Log.info('已迁移旧配置: %s', legacyDir);
-                app.H.settingsStatus.Text = '✓ 已迁移旧配置';
-            else
-                app.Log.warn('未找到可迁移的旧配置目录: %s', legacyDir);
-            end
-        end
-
         %% ---------- 日志 ----------
         function onClearLog(app)
             app.Log.clear();
@@ -1184,6 +1189,61 @@ classdef SimWorkbench < handle
         end
 
         %% ---------- 模型/流水线辅助 ----------
+        function refreshModelCandidates(app)
+            %REFRESHMODELCANDIDATES 刷新「模型名称」下拉：已打开模型 + 保存目录里的 .slx。
+            %  下拉框是可编辑的（Editable='on'），刷新不会丢掉用户手写的名称。
+            if ~isfield(app.H, 'modelNameEdit') || ~isvalid(app.H.modelNameEdit)
+                return;
+            end
+            folder = '';
+            if isfield(app.H, 'modelFolderEdit') && isvalid(app.H.modelFolderEdit)
+                folder = strtrim(app.H.modelFolderEdit.Value);
+            end
+            names = {};
+            try
+                names = swb.ModelCatalog.names(folder);
+            catch ME
+                app.Log.debug('扫描现有模型失败: %s', ME.message);
+            end
+            cur = strtrim(app.H.modelNameEdit.Value);
+            if ~isempty(cur) && ~any(strcmp(names, cur))
+                names = [{cur}, names];
+            end
+            if isempty(names)
+                names = {'myModel'};
+            end
+            app.H.modelNameEdit.Items = names;
+        end
+
+        function onModelNameChanged(app)
+            %ONMODELNAMECHANGED 从下拉里选了现有模型时，把保存目录切到该模型所在目录。
+            %   手写名称不受影响：只有当保存目录下没有同名模型时才跟随文件位置。
+            name = strtrim(app.H.modelNameEdit.Value);
+            if isempty(name) || ~isfield(app.H, 'modelFolderEdit') || ~isvalid(app.H.modelFolderEdit)
+                return;
+            end
+            folder = strtrim(app.H.modelFolderEdit.Value);
+            if isempty(folder)
+                folder = pwd;
+            end
+            if isfile(fullfile(folder, [name '.slx'])) || isfile(fullfile(folder, [name '.mdl']))
+                return;   % 保存目录里已有这个模型：保持用户选定的目录
+            end
+            info = [];
+            try
+                info = swb.ModelCatalog.findByName(name);
+            catch ME
+                app.Log.debug('解析模型位置失败: %s', ME.message);
+                return;
+            end
+            if isempty(info) || isempty(info.folder) || strcmp(info.folder, folder)
+                return;
+            end
+            app.H.modelFolderEdit.Value = info.folder;
+            app.Log.info('模型 "%s" 位于 %s，保存目录已切换。', name, info.folder);
+            app.refreshModelCandidates();
+        end
+
         function [modelRef, modelPath] = modelRefFromUI(app)
             name = strtrim(app.H.modelNameEdit.Value);
             folder = strtrim(app.H.modelFolderEdit.Value);

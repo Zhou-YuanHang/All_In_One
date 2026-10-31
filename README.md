@@ -2,8 +2,8 @@
 
 把"数据字典"和"建模"两条工作流合并为一个 MATLAB App：**一个窗口，两份 Excel，一次点击**。
 
-> 状态：**v1.5 / P5 已完成**。全量回归 **98/98 通过**（13 个测试类，58.2 s）；可安装包已双形态交付：**`build/SimWorkbench.mlappinstall`（v1.5，约 148 KB，双击安装、出现在 Apps 选项卡）** 与 `build/SimWorkbench.mltbx`（工具箱）。一键验收脚本 `build/final_verify.m` 会依次完成「打包 → 干净安装 → 启动冒烟 → 全量回归」。
-> 设计文档：[docs/design/all-in-one-design.md](docs/design/all-in-one-design.md)（v0.6）。旧工具源码 `src/` 仅作参考，**不再维护、不再发布**。
+> 状态：**v1.6 / P5 已完成**。全量回归 **112/112 通过**（14 个测试类，69.9 s）；可安装包已双形态交付：**`build/SimWorkbench.mlappinstall`（v1.6，约 154 KB，双击安装、出现在 Apps 选项卡）** 与 `build/SimWorkbench.mltbx`（工具箱）。一键验收脚本 `build/final_verify.m` 会依次完成「打包 → 干净安装 → 启动冒烟 → 全量回归」。
+> 设计文档：[docs/design/all-in-one-design.md](docs/design/all-in-one-design.md)（v0.7）。旧工具源码 `src/` 已移除（原仓库 `F:\GithubRepos\AutoCreateModel`、`F:\GithubRepos\AutoCreateSldd` 仍在），分析结论留在 `docs/analysis/`。
 
 ![工作流页：一次真实的一键执行](docs/ui/ui_workflow_run.png)
 
@@ -103,22 +103,23 @@ matlab -batch "cd('F:\GithubRepos\All_In_One'); addpath('app'); addpath('tests')
 All_In_One/
 ├─ app/
 │  ├─ SimWorkbench.m          # 唯一入口：uifigure + 5 页
-│  ├─ +swb/                   # 17 个服务类（无 UI 依赖）
+│  ├─ +swb/                   # 18 个服务类（无 UI 依赖）
 │  │   Schema Workbook PortTable Settings Log Issue PythonService
 │  │   Validator ScriptBuilder Dictionary ReverseSync
 │  │   ModelBuilder PortSync PortExport CodeMapping Pipeline TemplateConfig
+│  │   ModelCatalog           # v1.6 现有模型候选（已打开 + 目录中的 .slx）
 │  │   └─ +ui/TemplateConfigDialog.m  # v1.5 模板 Config 模态编辑器
 │  └─ resources/              # +myPackage CSC 注册、python 模板/反向脚本
 ├─ tests/
 │  ├─ runAll.m                # runtests(...,'IncludeSubfolders',true)
-│  ├─ +swbtest/               # 13 个测试类、98 个测试方法（含 TestPipeline、TestAppUI、TestTemplateConfig、TestTemplateConfigDialog）
-│  └─ +swbfixture/Workbooks.m # 8 表字典 / 7 列端口 样本生成
+│  ├─ +swbtest/               # 14 个测试类、112 个测试方法（含 TestPipeline、TestAppUI、TestModelCatalog、TestTemplateConfig、TestTemplateConfigDialog）
+│  ├─ +swbfixture/Workbooks.m # 8 表字典 / 7 列端口 样本生成
+│  └─ +swbfixture/golden/     # 旧实现的冻结 golden 样本（objects_legacy.txt / gear_legacy.txt）
 ├─ tools/                     # smoke_p1 / smoke_dict / smoke_model / smoke_pipeline / preview_ui
 ├─ docs/
 │  ├─ design/all-in-one-design.md   # v0.6 设计（架构、API、契约、修复对照、验收）
 │  ├─ analysis/{newmodelapp,autocreatesldd}.md
 │  └─ ui/                     # 6 张界面截图（5 页 + 模板 Config 编辑器）
-└─ src/{NewModelApp,AutoCreateSldd}/  # 旧工具静态副本，只读参考
 ```
 
 ---
@@ -147,11 +148,13 @@ UI  SimWorkbench  →  Pipeline.run(cfg)  →  领域服务  →  基础设施
 |---|---|
 | 工作流 | 两份工作簿路径 + 能力探测、6 行步骤表、一键执行、结果摘要 |
 | 数据字典 | 表多选、4 个开关（校验/写前确认/删多余/清 Excel）、脚本与 `.sldd` 路径、校验/预览/生成/写入/反向同步、问题表 |
-| 模型与端口 | 模型名/目录/求解器/步长/TLC/GenCodeOnly/字典/端口工作簿/映射/打开/冲突策略、7 列端口预览、创建/更新/导出 |
-| 设置 | Python 路径（测试）、默认 TLC、默认冲突策略、旧配置迁移、模板 Config（编辑对话框，v1.5） |
+| 模型与端口 | 模型名（**可手写 + 可选现有模型**）/目录/求解器/步长/TLC/GenCodeOnly/字典/端口工作簿/映射/打开/冲突策略、7 列端口预览、创建/更新/导出 |
+| 设置 | Python 路径（测试）、默认 TLC、默认冲突策略、模板 Config（编辑对话框，v1.5） |
 | 日志 | 实时追加、清空/复制/导出 |
 
 静态截图：[工作流](docs/ui/ui_workflow.png) · [数据字典](docs/ui/ui_dict.png) · [模型与端口](docs/ui/ui_model.png) · [设置](docs/ui/ui_settings.png) · [日志](docs/ui/ui_log.png) · [模板 Config 编辑器](docs/ui/ui_template_config.png)（由 `tools/preview_ui.m` 用测试夹具生成，最后一张是 v1.5 的设置页模态对话框：8 列候选值、一行一个、底部实时计数）。
+
+**模型页的模型名称（v1.6）**：控件是可编辑下拉框——直接键入名称就是新建，从下拉里选一个就是改现有模型。候选包括**已打开的模型**和**保存目录里的 `.slx`**（库文件、非法标识符文件名会被过滤），点「刷新」重新扫描；选中某个现有模型时，保存目录会自动切到它所在目录（手写的名称不会被动）。选好模型后点「导出端口」，默认文件名是 **`<模型名称>_ports.xlsx`**（例如 `MCU_Input` → `MCU_Input_ports.xlsx`），导出成功后端口工作簿自动指向这个文件，接着点「更新端口」就能把改过的 Excel 写回模型。
 
 真实运行截图（`tools/preview_ui_run.m`，跑完一键流水线后抓取）：[工作流](docs/ui/ui_workflow_run.png) · [模型与端口](docs/ui/ui_model_run.png) · [日志](docs/ui/ui_log_run.png)。
 
@@ -181,7 +184,7 @@ UI  SimWorkbench  →  Pipeline.run(cfg)  →  领域服务  →  基础设施
 
 | 命令 | 作用 |
 |---|---|
-| `matlab -batch "…; addpath('app'); addpath('tests'); runAll"` | 全量单元/集成测试（13 类 98 方法，约 60 s） |
+| `matlab -batch "…; addpath('app'); addpath('tests'); runAll"` | 全量单元/集成测试（14 类 112 方法，约 70 s） |
 | `matlab -batch "…; addpath('build'); final_verify"` | **一键验收**：打包 → 干净安装 → 启动冒烟 → 安装副本修复自检 → 全量回归（报告 `build/final_report.txt`） |
 | `addpath('build'); mcp_verify`（经 MATLAB MCP 执行） | 在**可见桌面会话**里跑同一套验收：流水线冒烟 + 全量回归 + App 构造/销毁（报告 `build/mcp_verify_report.txt`） |
 | `… addpath('tools'); smoke_p1` | 基础层（Schema/Log/Settings/Workbook/PortTable） |
@@ -195,7 +198,7 @@ UI  SimWorkbench  →  Pipeline.run(cfg)  →  领域服务  →  基础设施
 
 环境实测（R2024b Update 8）：`license('test')` 显示 `Simulink_Coder=0 / Embedded_Coder=0`，但 `coder.mapping` API 实际可用（`initialized=1`、`appliedIn/appliedOut` 生效且可回读），因此 Code Mapping 采用"先试后降级"，不设许可门禁。详见设计文档 §9.4。
 
-**已记录的全量回归**（2026-10-29，R2024b Update 8，v1.5）：`98 Passed, 0 Failed, 0 Incomplete`，58.21 s；测试类分布 TestDictionary 8 / TestModelBuilder 14 / TestPortSync 8 / TestPortExport 5 / TestCodeMapping 8 / TestValidator 13 / TestScriptBuilder 6 / TestPythonService 8 / TestReverseSync 4 / TestPipeline 2 / TestAppUI 4 / TestTemplateConfig 12 / TestTemplateConfigDialog 6。
+**已记录的全量回归**（2026-10-31，R2024b Update 8，v1.6）：`112 Passed, 0 Failed, 0 Incomplete`，69.9 s；测试类分布 TestDictionary 8 / TestModelBuilder 14 / TestModelCatalog 8 / TestPortSync 8 / TestPortExport 7 / TestCodeMapping 8 / TestValidator 13 / TestScriptBuilder 6 / TestPythonService 8 / TestReverseSync 4 / TestPipeline 2 / TestAppUI 6 / TestTemplateConfig 12 / TestTemplateConfigDialog 6。
 
 > 该数字来自 `build/final_verify.m` 的**完整验收序列**（先打包+安装+启动，再跑测试）——此时安装副本的 `+swb` 在 MATLAB 路径上，比"只跑测试"更接近用户真实环境。
 
@@ -206,7 +209,7 @@ UI  SimWorkbench  →  Pipeline.run(cfg)  →  领域服务  →  基础设施
 ```matlab
 addpath('F:\GithubRepos\All_In_One\app', 'F:\GithubRepos\All_In_One\tests', ...
         'F:\GithubRepos\All_In_One\build');
-mcp_verify                 % 流水线冒烟 + 98 个测试 + App 构造/销毁
+mcp_verify                 % 流水线冒烟 + 112 个测试 + App 构造/销毁
 mcp_verify('SkipTests', true)
 ```
 
@@ -223,7 +226,6 @@ mcp_verify('SkipTests', true)
 | 内容 | 位置 |
 |---|---|
 | 机器级设置 | `fullfile(prefdir,'simworkbench.json')`（Python 路径、默认 TLC/冲突策略、最近使用、模板 Config） |
-| 旧配置迁移 | 设置页「迁移旧配置…」读取 `src/AutoCreateSldd/python_config.json` 与 `template_config.json`，旧文件不改 |
 | 项目数据 | 两份 Excel 工作簿（唯一项目级数据源） |
 | 日志 | 内存 `Log.Entries`（上限 5000），手动导出，默认不落盘 |
 
@@ -231,14 +233,14 @@ Python 本机实测：`D:\SoftwareInstallation\Python3147\python.exe` + openpyxl
 
 ---
 
-## 旧工具（只读参考）
+## 旧工具（已移除）
 
-`src/NewModelApp`、`src/AutoCreateSldd` 是合并前的两个独立 App 的静态副本，保留用于行为对照：
+合并前两个独立 App 的源码副本 `src/` 已删除，仓库不再包含它们；需要行为对照时请直接看原仓库：
 
-- 新建模型：把 `src/NewModelApp` 加入路径，执行 `NewModelApp`；
-- 数据字典：把 `src/AutoCreateSldd` 加入路径，执行 `sldd_gui`。
+- 新建模型：`F:\GithubRepos\AutoCreateModel`（`NewModelApp.m`）；
+- 数据字典：`F:\GithubRepos\AutoCreateSldd`（`sldd_gui.m`、`Excel2Workspace.m`）。
 
-它们**不修 bug、不跟进新契约、不再打包发布**；新功能一律进 `app/+swb`。拷贝来源 commit 与 SHA-256 清单见 [docs/analysis/source-manifest.json](docs/analysis/source-manifest.json)。
+原副本的静态分析结论（文件清单、行为契约、SHA-256）留在 `docs/analysis/newmodelapp.md`、`docs/analysis/autocreatesldd.md`。旧实现的行为基线以 `tests/+swbfixture/golden/` 下的冻结样本保留，`TestScriptBuilder` 仍逐字对比。
 
 ---
 
@@ -250,9 +252,10 @@ Python 本机实测：`D:\SoftwareInstallation\Python3147\python.exe` + openpyxl
 | P2 字典侧（Validator/ScriptBuilder/Dictionary/ReverseSync/PythonService） | ✅ |
 | P3 模型侧（ModelBuilder/PortSync/CodeMapping/PortExport） | ✅ |
 | P4 UI（五页 + 流水线 + 设置 + 日志） | ✅ |
-| P5 交付（回归/打包/文档/边界） | ✅ 98/98 回归通过；`.mlappinstall`（v1.5）+ `.mltbx` 均已构建，干净安装/启动冒烟/安装副本自检通过 |
+| P5 交付（回归/打包/文档/边界） | ✅ 112/112 回归通过；`.mlappinstall`（v1.6）+ `.mltbx` 均已构建，干净安装/启动冒烟/安装副本自检通过 |
 | v1.1 修复 | ✅ 外部同名模型警告、保存后模型路径校验、目标目录为空时也检测外部同名模型 |
 | v1.2 验收 | ✅ `build/final_verify.m` 一键验收；`build/launch_app.m` 绕过 addon 注册启动；文档同步到 v1.2 |
+| v1.6 新增 | ✅ 「模型与端口」的模型名称改成**可编辑下拉框**：既能直接手写名称，也能从下拉里选一个现有模型（已打开的模型 + 保存目录里的 `.slx`，库文件与非法标识符文件名自动过滤）；新增 `swb.ModelCatalog`（`list`/`names`/`findByName`/`isFileBacked`）作为候选来源、模型页「刷新」按钮重新扫描、选中现有模型时保存目录自动切到该模型目录（手写名称不受影响）。导出端口默认文件名改为 **`<模型名称>_ports.xlsx`**（`swb.PortExport.defaultFileName`，非法文件名字符替换为下划线），导出成功后端口工作簿自动切到刚导出的文件。新增 `TestModelCatalog` 8 例 + `TestPortExport` 2 例 + `TestAppUI` 2 例（112/112，69.9 s，包 157,433 字节） |
 | v1.5 修复 | ✅ 「设置 → 模板 Config → 编辑…」从占位变成真编辑器：新增 `swb.TemplateConfig`（`defaults`/`normalize`/`prepare`/`validate`/`summary`，8 列候选值去重去空白、空列保留、未知列告警、保存前校验）+ `swb.ui.TemplateConfigDialog`（780×700 模态框，8 个「一行一个候选值」文本域 + 实时计数 + 恢复默认/取消/保存）；设置页显示「Config 表候选值：8 列 / N 项（内置默认/已自定义）」摘要；保存即写 `Settings` 并刷新。反向同步生成模板时把 `Settings.TemplateConfig` 传给 `PythonService.generateTemplate`（`generate_template.py --config`），Python 不可用的 MATLAB 退化模板也用它。新增 `TestTemplateConfig` 12 例 + `TestTemplateConfigDialog` 6 例 + `TestAppUI` 第 4 例（98/98，58.21 s，包 151,941 字节） |
 | v1.4 修复 | ✅ 文件对话框关闭后 App 重回最前：新增 `raiseApp`/`focusGuard`/`pickOpenFile`/`pickSaveFile`/`pickFolder`/`confirmAndRaise` 六个私有方法（占位图窗 + `DeleteFcn` 回焦，思路来自 JorgWoehl/fixfocus），14 处 `uigetfile`/`uiputfile`/`uigetdir`/`uiconfirm` 调用点全部收口到这层包装；新增 `swbtest.TestAppUI` 3 个用例（79/79 回归通过，48.78 s） |
 | v1.3 修复 | ✅ `swb.Pipeline` 支持 `swb.Schema.modelConfigDefaults()` 的字段名（`ModelName`/`ModelFolder`），修复「照文档直接传默认配置时建模步骤被跳过」；新增 `swbtest.TestPipeline` 2 个用例（76/76 回归通过，54.51 s，包约 142 KB）；新增 MCP 驱动验证脚本 `build/mcp_verify.m` |
@@ -266,14 +269,14 @@ Python 本机实测：`D:\SoftwareInstallation\Python3147\python.exe` + openpyxl
 
 **`.mlappinstall` 是怎么生成的**：MATLAB 官方入口是 `matlab.apputil.create`（打开打包对话框，需要桌面）与 `matlab.apputil.package`（读 `.prj` 打包，可无头运行）。仓库里的 `build/make_appinstaller.m` 用代码生成与对话框等价的最小 `.prj`（模板 `build/appinstaller_template.xml`，`plugin="plugin.apptool"`、`target="target.mlapps"`），再调用 `matlab.apputil.package`，因此可以完全在 `matlab -batch` 里重建。打包内容就是 `build/appstage/` 下的目录结构：`SimWorkbench.m` + `+swb/` + `resources/` + README/docs，入口点 `SimWorkbench`。
 
-**实测记录**（R2024b Update 8，v1.5）：构建产物 **151,941 字节（约 148 KB）**（安装包会一并打包 `README.md`/`docs/`，因此每次改文档重打都会浮动几十到几百字节，**精确值以 `build/final_report.txt` 里的 `PACKAGE_BYTES` 为准**）；`matlab.apputil.install` 返回 `id=SimWorkbenchAPP / status=installed`，安装目录生成 `SimWorkbenchApp.m` 包装类与 `+swb/`、`resources/`；通过包装类启动后 `AppHandle` 的类型为 `SimWorkbench`（`LAUNCH_OK=1`、创建 1 个 figure），可正常关闭；安装副本 `+swb/ModelBuilder.m` 含 v1.1 的两处修复（`externalModelFile` / `unexpectedModelFile`）。
+**实测记录**（R2024b Update 8，v1.6）：构建产物 **157,433 字节（约 154 KB）**（安装包会一并打包 `README.md`/`docs/`，因此每次改文档重打都会浮动几十到几百字节，**精确值以 `build/final_report.txt` 里的 `PACKAGE_BYTES` 为准**）；`matlab.apputil.install` 返回 `id=SimWorkbenchAPP / status=installed`，安装目录生成 `SimWorkbenchApp.m` 包装类与 `+swb/`、`resources/`；通过包装类启动后 `AppHandle` 的类型为 `SimWorkbench`（`LAUNCH_OK=1`、创建 1 个 figure），可正常关闭；安装副本 `+swb/ModelBuilder.m` 含 v1.1 的两处修复（`externalModelFile` / `unexpectedModelFile`）。
 
 **一键验收脚本**：
 
 ```matlab
 cd('F:\GithubRepos\All_In_One');
 addpath('build');
-final_verify                       % = final_verify('Version','1.5')
+final_verify                       % = final_verify('Version','1.6')
 final_verify('SkipTests', true)    % 只验打包/安装/启动，不跑回归
 ```
 

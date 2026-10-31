@@ -99,6 +99,28 @@ classdef PortExport
         end
     end
 
+    methods (Static)
+        function f = defaultFileName(modelName)
+            %DEFAULTFILENAME 导出端口的默认文件名：<模型名称>_ports.xlsx。
+            %   模型名称里的非法文件名字符替换成下划线；名称为空时退回 ports.xlsx。
+            name = strtrim(char(modelName));
+            if isempty(name)
+                f = 'ports.xlsx';
+                return
+            end
+            name = regexprep(name, '[\\/:*?"<>|\s]', '_');
+            f = [name '_ports.xlsx'];
+        end
+
+        function f = defaultFile(modelName, folder)
+            %DEFAULTFILE 默认导出路径：保存目录（缺省为当前目录）+ defaultFileName。
+            if nargin < 2 || isempty(folder)
+                folder = pwd;
+            end
+            f = fullfile(char(folder), swb.PortExport.defaultFileName(modelName));
+        end
+    end
+
     methods (Static, Access = private)
         function [modelName, modelFile] = resolveModelRef(ref)
             % 接受模型名或 .slx/.mdl 文件路径（设计文档风险 #8：其它目录的模型）

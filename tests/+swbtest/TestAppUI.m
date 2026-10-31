@@ -1,6 +1,10 @@
 classdef TestAppUI < swbtest.SwbTestBase
     %SWBTEST.TESTAPPUI 界面层约定：文件对话框统一走 focusGuard，避免选完文件后 App 退到后台。
 
+    properties (Constant)
+        P = 'swbUI_';
+    end
+
     methods (Test)
         function testFocusGuardHelpersExist(tc)
             % 对话框包装方法与焦点恢复方法必须存在（私有方法，用 metaclass 检查）
@@ -43,6 +47,66 @@ classdef TestAppUI < swbtest.SwbTestBase
                 '模板 Config 编辑不应再是占位实现');
             tc.verifyTrue(contains(src, 'app.templateConfigSummary('), ...
                 '设置页应显示当前候选值摘要');
+        end
+
+        function testModelNameIsEditableDropdown(tc)
+            % 「模型与端口」的模型名称要既能手写、也能选现有模型：
+            % 必须是可编辑 uidropdown，并带刷新候选与选中后切目录的回调。
+            app = SimWorkbench();
+            tc.addTeardown(@() delete(app));
+            tc.verifyClass(app.H.modelNameEdit, 'matlab.ui.control.DropDown', ...
+                '模型名称应为下拉框');
+            tc.verifyEqual(char(app.H.modelNameEdit.Editable), 'on', ...
+                '模型名称下拉框必须可手写');   % Editable 是 OnOffSwitchState 枚举
+            tc.verifyTrue(isfield(app.H, 'modelNameEdit'));
+        end
+
+        function testModelNameDropdownListsExistingModels(tc)
+            % 刷新按钮要把已打开/目录里的模型放进候选，同时保留手写名称。
+            d = tc.tmpDir();
+            name = [tc.P 'pick'];
+            tc.createPortModel(d, name, tc.makePorts({'u1', 'double'}), ...
+                tc.makePorts({'y1', 'double'}));
+            app = SimWorkbench();
+            tc.addTeardown(@() delete(app));
+            app.H.modelFolderEdit.Value = d;
+            app.H.modelRefreshButton.ButtonPushedFcn(app.H.modelRefreshButton, []);
+            tc.verifyTrue(any(strcmp(app.H.modelNameEdit.Items, name)), ...
+                '刷新后候选里应有保存目录中的现有模型');
+
+            % 手写任意名称后刷新，用户输入不能被清掉
+            app.H.modelNameEdit.Value = 'handTypedModel';
+            app.H.modelRefreshButton.ButtonPushedFcn(app.H.modelRefreshButton, []);
+            tc.verifyEqual(app.H.modelNameEdit.Value, 'handTypedModel');
+            tc.verifyTrue(any(strcmp(app.H.modelNameEdit.Items, 'handTypedModel')));
+        end
+
+        function testSelectingExistingModelSwitchesFolder(tc)
+            % 从下拉里选现有模型时，保存目录自动切到该模型所在目录。
+            d = tc.tmpDir();
+            name = [tc.P 'switch'];
+            tc.createPortModel(d, name, tc.makePorts({'u1', 'double'}), ...
+                tc.makePorts({'y1', 'double'}));
+            other = tc.tmpDir();
+            app = SimWorkbench();
+            tc.addTeardown(@() delete(app));
+            app.H.modelFolderEdit.Value = other;
+            app.H.modelNameEdit.Items = [app.H.modelNameEdit.Items, {name}];
+            app.H.modelNameEdit.Value = name;
+            app.H.modelNameEdit.ValueChangedFcn(app.H.modelNameEdit, []);
+            tc.verifyTrue(strcmpi(app.H.modelFolderEdit.Value, d), ...
+                '选现有模型后保存目录应切到模型目录');
+        end
+
+        function testExportDefaultNameUsesModelNamePorts(tc)
+            % 导出端口时默认文件名 = <模型名称>_ports.xlsx
+            root = fileparts(fileparts(fileparts(mfilename('fullpath'))));
+            src = fileread(fullfile(root, 'app', 'SimWorkbench.m'));
+            tc.verifyTrue(contains(src, 'swb.PortExport.defaultFileName('), ...
+                '导出回调应使用 PortExport.defaultFileName 作为默认文件名');
+            tc.verifyTrue(contains(src, '刷新'), '模型页应有刷新候选的按钮');
+            tc.verifyTrue(contains(src, 'swb.ModelCatalog.'), ...
+                '候选模型应来自 swb.ModelCatalog');
         end
 
         function testAppConstructsWithFocusHelpers(tc)

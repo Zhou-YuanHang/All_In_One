@@ -78,6 +78,26 @@ classdef TestPortExport < swbtest.SwbTestBase
             tc.verifyTrue(any(contains(r.warnings, '未找到')));
         end
 
+        function testDefaultFileNameUsesModelName(tc)
+            % 导出端口的默认文件名：<模型名称>_ports.xlsx
+            tc.verifyEqual(swb.PortExport.defaultFileName('myModel'), 'myModel_ports.xlsx');
+            tc.verifyEqual(swb.PortExport.defaultFileName('  myModel  '), 'myModel_ports.xlsx');
+            % 非法文件名字符替换成下划线，空格替换成下划线
+            tc.verifyEqual(swb.PortExport.defaultFileName('a/b:c*d'), 'a_b_c_d_ports.xlsx');
+            tc.verifyEqual(swb.PortExport.defaultFileName('my model'), 'my_model_ports.xlsx');
+            % 空名称退回 ports.xlsx
+            tc.verifyEqual(swb.PortExport.defaultFileName(''), 'ports.xlsx');
+            tc.verifyEqual(swb.PortExport.defaultFileName('   '), 'ports.xlsx');
+        end
+
+        function testDefaultFileUsesFolder(tc)
+            d = tc.tmpDir();
+            f = swb.PortExport.defaultFile('demo', d);
+            tc.verifyEqual(f, fullfile(d, 'demo_ports.xlsx'));
+            tc.verifyEqual(swb.PortExport.defaultFile('demo', ''), ...
+                fullfile(pwd, 'demo_ports.xlsx'));
+        end
+
         function testExportBadArguments(tc)
             d = tc.tmpDir();
             name = [tc.P 'bad'];

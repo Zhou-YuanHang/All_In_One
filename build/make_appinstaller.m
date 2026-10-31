@@ -1,7 +1,7 @@
 function outFile = make_appinstaller(varargin)
 %MAKE_APPINSTALLER 打包成可双击安装的 .mlappinstall（官方 App 打包流程）。
 %   outFile = make_appinstaller() 生成 build\SimWorkbench.mlappinstall。
-%   outFile = make_appinstaller('Version','1.5') 指定版本号（默认 1.5）。
+%   outFile = make_appinstaller('Version','1.6') 指定版本号（默认 1.6）。
 %
 %   原理：MATLAB App 安装包 = OPC(zip) 容器 + 元数据；官方入口：
 %     matlab.apputil.create  —— 打开打包对话框生成 .prj（需要桌面）
@@ -14,7 +14,7 @@ function outFile = make_appinstaller(varargin)
 %   +swb 包与 resources 按原目录结构安装到 App 根目录。
 
 p = inputParser;
-p.addParameter('Version', '1.5', @(x) ischar(x) || isstring(x));
+p.addParameter('Version', '1.6', @(x) ischar(x) || isstring(x));
 p.addParameter('OutputFile', '', @(x) ischar(x) || isstring(x));
 p.addParameter('Guid', '4963bdd0-a45a-4711-ad54-aa2e96206eef', @(x) ischar(x) || isstring(x));
 p.parse(varargin{:});
