@@ -26,6 +26,12 @@ codegen/
 *.mex*
 *.exe
 
+# ---------- Excel 工作簿 ----------
+# 数据字典 / 端口表是本机输入数据，不入库（示例工作簿由 tools 生成）
+*.xlsx
+*.xls
+*.xlsm
+
 # ---------- 本仓库的构建产物 ----------
 # 打包暂存目录（每次 final_verify / make_* 重新生成）
 build/appstage/
