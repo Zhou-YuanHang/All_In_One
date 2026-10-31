@@ -1,10 +1,10 @@
 function outFile = make_toolbox(varargin)
 %MAKE_TOOLBOX 构建 SimWorkbench 工具箱安装包（.mltbx）
 %   make_toolbox() 收集 app/ 下的界面与服务层，生成 build/SimWorkbench.mltbx。
-%   make_toolbox('Version','1.4') 可指定版本号。
+%   make_toolbox('Version','1.5') 可指定版本号。
 %
 %   可选参数（Name-Value）：
-%     Version      工具箱版本，默认 '1.4'
+%     Version      工具箱版本，默认 '1.5'
 %     OutputFile   输出文件全路径，默认 <repo>/build/SimWorkbench.mltbx
 %     IncludeDocs  是否把 docs/design 设计与 README 一起打进包，默认 true
 %
@@ -12,7 +12,7 @@ function outFile = make_toolbox(varargin)
 %   运行 SimWorkbench 或调用 swb.* 服务。
 
 p = inputParser;
-p.addParameter('Version', '1.4', @(x) ischar(x) || isstring(x));
+p.addParameter('Version', '1.5', @(x) ischar(x) || isstring(x));
 p.addParameter('OutputFile', '', @(x) ischar(x) || isstring(x));
 p.addParameter('IncludeDocs', true, @(x) islogical(x) || isnumeric(x));
 p.parse(varargin{:});

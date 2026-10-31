@@ -28,6 +28,15 @@ for k = 1:numel(tabs)
     fprintf('saved %s (%d bytes)\n', out, dir(out).bytes);
 end
 
+% 模板 Config 编辑器对话框（v1.5）
+app.setTab('设置'); drawnow; pause(0.3);
+dlg = swb.ui.TemplateConfigDialog(app.UIFigure, app.Settings.TemplateConfig);
+drawnow; pause(0.4);
+outDlg = fullfile(outDir, 'ui_template_config.png');
+exportapp(dlg.Figure, outDlg);
+fprintf('saved %s (%d bytes)\n', outDlg, dir(outDlg).bytes);
+delete(dlg.Figure); drawnow;
+
 % 组件完整性检查
 fprintf('checks: tabs=%d dictItems=%d portRows=%d logLines=%d\n', ...
     numel(app.TabGroup.Children), numel(app.H.sheetList.Items), size(app.H.portTable.Data, 1), numel(app.H.logArea.Value));

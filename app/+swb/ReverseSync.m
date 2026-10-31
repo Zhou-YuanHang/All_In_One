@@ -33,7 +33,7 @@ classdef ReverseSync
                 opts = struct();
             end
             opts = swb.ReverseSync.withDefaults(opts, struct( ...
-                'CleanExcel', false, 'Exe', '', 'PythonService', [], 'Log', []));
+                'CleanExcel', false, 'Exe', '', 'PythonService', [], 'Log', [], 'Config', []));
 
             result = struct('ok', false, 'rows', swb.ReverseSync.emptyCounts(), ...
                 'workbookCreated', false, 'messages', {{}}, 'errorText', '', ...
@@ -60,7 +60,7 @@ classdef ReverseSync
                 created = false;
                 if ~isempty(exe)
                     tr = swb.PythonService.generateTemplate(workbookPath, ...
-                        struct('Empty', true, 'Exe', exe));
+                        struct('Empty', true, 'Exe', exe, 'Config', opts.Config));
                     created = tr.ok && isfile(workbookPath);
                     if created
                         result = swb.ReverseSync.note(result, opts, ...
@@ -71,7 +71,7 @@ classdef ReverseSync
                     end
                 end
                 if ~created
-                    if swb.ReverseSync.writeMatlabTemplate(workbookPath)
+                    if swb.ReverseSync.writeMatlabTemplate(workbookPath, opts.Config)
                         created = true;
                         result = swb.ReverseSync.note(result, opts, ...
                             '目标工作簿不存在，已用 MATLAB writecell 生成基本模板。');
@@ -441,7 +441,7 @@ classdef ReverseSync
         end
 
         %% ---------- MATLAB 基本模板（Python 不可用时的退化路径） ----------
-        function ok = writeMatlabTemplate(workbookPath)
+        function ok = writeMatlabTemplate(workbookPath, cfg)
             ok = false;
             try
                 outDir = fileparts(workbookPath);
@@ -459,7 +459,10 @@ classdef ReverseSync
                 for k = 1:numel(list)
                     writecell(swb.Schema.dictColumns(list{k}), workbookPath, 'Sheet', list{k});
                 end
-                cfg = swb.Schema.defaultConfig();
+                if nargin < 2 || isempty(cfg)
+                    cfg = swb.Schema.defaultConfig();
+                end
+                cfg = swb.TemplateConfig.normalize(cfg);
                 cols = swb.Schema.configColumns();
                 maxLen = 0;
                 for c = 1:numel(cols)

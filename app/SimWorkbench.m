@@ -410,7 +410,8 @@ classdef SimWorkbench < handle
             app.H.defaultConflictDrop.Layout.Column = 2;
 
             app.mkLabel(gp, '模板 Config', 5, 1);
-            app.mkLabel(gp, 'Config 表候选值（Package/Object/StorageClass/...）', 5, 2, 'FontColor', [0.45,0.45,0.45]);
+            app.H.templateCfgInfo = app.mkLabel(gp, app.templateConfigSummary(), 5, 2, ...
+                'FontColor', [0.45,0.45,0.45], 'WordWrap', 'on');
             app.mkButton(gp, '编辑…', 5, 3, @(~, ~) app.onEditTemplateConfig());
 
             app.mkLabel(gp, '旧配置迁移', 6, 1);
@@ -779,7 +780,8 @@ classdef SimWorkbench < handle
                     end
                     sldd = strtrim(app.H.slddEdit.Value);
                     opts = struct('CleanExcel', logical(app.H.cleanExcelChk.Value), ...
-                                  'Exe', app.Settings.PythonPath, 'Log', app.Log);
+                                  'Exe', app.Settings.PythonPath, 'Log', app.Log, ...
+                                  'Config', app.Settings.TemplateConfig);
                     result = swb.ReverseSync.toWorkbook(sldd, dictPath, opts);
                     app.Log.info('反向同步完成，共 %d 张表。', numel(fieldnames(result.rows)));
                 otherwise
@@ -1051,6 +1053,17 @@ classdef SimWorkbench < handle
                         app.H.defaultConflictDrop.Value = '询问';
                 end
             end
+            if isfield(app.H, 'templateCfgInfo') && isvalid(app.H.templateCfgInfo)
+                app.H.templateCfgInfo.Text = app.templateConfigSummary();
+            end
+        end
+
+        function txt = templateConfigSummary(app)
+            try
+                txt = swb.TemplateConfig.summary(app.Settings.TemplateConfig);
+            catch
+                txt = 'Config 表候选值（8 列）';
+            end
         end
 
         function onBrowsePython(app)
@@ -1096,8 +1109,31 @@ classdef SimWorkbench < handle
         end
 
         function onEditTemplateConfig(app)
-            app.Log.info('模板 Config 当前候选值: %s', strjoin(fieldnames(app.Settings.TemplateConfig), ', '));
-            app.H.settingsStatus.Text = '模板 Config 编辑界面将在后续版本接入。';
+            try
+                dlg = swb.ui.TemplateConfigDialog(app.UIFigure, app.Settings.TemplateConfig);
+            catch ME
+                app.Log.err('无法打开模板 Config 编辑器: %s', ME.message);
+                app.H.settingsStatus.Text = '✗ 无法打开模板 Config 编辑器';
+                app.raiseApp();
+                return;
+            end
+            dlg.show();
+            if isempty(dlg.Result)
+                app.Log.info('模板 Config 编辑已取消（未修改）。');
+                app.H.settingsStatus.Text = '模板 Config 未修改。';
+            else
+                app.Settings.TemplateConfig = dlg.Result;
+                app.Settings.save();
+                warns = dlg.Warnings;
+                for k = 1:numel(warns)
+                    app.Log.warn('%s', warns{k});
+                end
+                app.Log.info('模板 Config 已保存（%s）。', ...
+                    swb.TemplateConfig.summary(app.Settings.TemplateConfig));
+                app.H.settingsStatus.Text = '✓ 模板 Config 已保存';
+                app.applySettingsToUI();
+            end
+            app.raiseApp();
         end
 
         function onMigrateLegacy(app)

@@ -1,5 +1,5 @@
 function final_verify(varargin)
-%FINAL_VERIFY 最终验收：打包 v1.3 → 干净安装 → 启动冒烟 → 全量回归。
+%FINAL_VERIFY 最终验收：打包 v1.5 → 干净安装 → 启动冒烟 → 全量回归。
 %  用法（无头）：
 %    matlab -batch "cd('F:\GithubRepos\All_In_One'); addpath('build'); final_verify"
 %  报告写到 build\final_report.txt（UTF-8，避免 GBK 控制台乱码），
@@ -10,7 +10,7 @@ function final_verify(varargin)
 %  无错误信息、不产出 .mlappinstall）。因此本脚本把打包/安装放在测试之前。
 
 p = inputParser;
-p.addParameter('Version', '1.4', @(x) ischar(x) || isstring(x));
+p.addParameter('Version', '1.5', @(x) ischar(x) || isstring(x));
 p.addParameter('SkipTests', false, @(x) islogical(x) || isnumeric(x));
 p.parse(varargin{:});
 opt = p.Results;

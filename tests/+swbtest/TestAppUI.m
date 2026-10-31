@@ -32,6 +32,19 @@ classdef TestAppUI < swbtest.SwbTestBase
             tc.verifyGreaterThanOrEqual(numel(strfind(src, 'app.confirmAndRaise(')), 5);
         end
 
+        function testTemplateConfigEditorIsWired(tc)
+            % 「设置 → 模板 Config → 编辑…」必须打开真正的编辑器，
+            % 而不是只往日志里写一行 "编辑界面将在后续版本接入" 的占位实现。
+            root = fileparts(fileparts(fileparts(mfilename('fullpath'))));
+            src = fileread(fullfile(root, 'app', 'SimWorkbench.m'));
+            tc.verifyTrue(contains(src, 'swb.ui.TemplateConfigDialog'), ...
+                'onEditTemplateConfig 应打开 swb.ui.TemplateConfigDialog');
+            tc.verifyFalse(contains(src, '后续版本接入'), ...
+                '模板 Config 编辑不应再是占位实现');
+            tc.verifyTrue(contains(src, 'app.templateConfigSummary('), ...
+                '设置页应显示当前候选值摘要');
+        end
+
         function testAppConstructsWithFocusHelpers(tc)
             % 构造函数里不应依赖对话框；构造/销毁应干净（helpers 不改变这一点）
             app = SimWorkbench();
