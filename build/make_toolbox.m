@@ -4,7 +4,7 @@ function outFile = make_toolbox(varargin)
 %   make_toolbox('Version','1.7.1') 可指定版本号。
 %
 %   可选参数（Name-Value）：
-%     Version           工具箱版本，默认 '1.7.1'
+%     Version           工具箱版本，默认 '1.7.2'
 %     OutputFile        输出文件全路径，默认 <repo>/build/SimWorkbench.mltbx
 %     IncludeDocs       是否把 docs/design 设计与 README 一起打进包，默认 true
 %     ExcludeResources  不随包复制的 resources 子项（按名字），默认 {'+myPackage'}
@@ -19,7 +19,7 @@ function outFile = make_toolbox(varargin)
 %   见 build/packageHasEntry.m。
 
 p = inputParser;
-p.addParameter('Version', '1.7.1', @(x) ischar(x) || isstring(x));
+p.addParameter('Version', '1.7.2', @(x) ischar(x) || isstring(x));
 p.addParameter('OutputFile', '', @(x) ischar(x) || isstring(x));
 p.addParameter('IncludeDocs', true, @(x) islogical(x) || isnumeric(x));
 p.addParameter('ExcludeResources', {'+myPackage'}, @(x) iscellstr(x) || isstring(x));
@@ -140,7 +140,7 @@ fprintf(fid, '%%   swb.ReverseSync         .sldd → Excel 反向同步\n');
 fprintf(fid, '%%   swb.ModelBuilder        创建/配置 Simulink 模型\n');
 fprintf(fid, '%%   swb.PortSync            同步模型端口\n');
 fprintf(fid, '%%   swb.CodeMapping         应用 Code Mapping\n');
-fprintf(fid, '%%   swb.Settings            机器级设置（prefdir/simworkbench.json）\n');
+fprintf(fid, '%%   swb.Settings            机器级设置（App 安装目录/simworkbench.json）\n');
 fprintf(fid, '%%   swb.TemplateConfig      模板配置（resources/template_config.json）\n');
 fprintf(fid, '%%   swb.ModelCatalog        模板模型目录\n');
 fprintf(fid, '%%   swb.TemplateExport      模板导出（新模型复制模板/端口）\n');

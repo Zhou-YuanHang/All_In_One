@@ -22,7 +22,10 @@ classdef ReverseSync
                 error('swb:ReverseSync:missingDict', '数据字典不存在: %s', dictPath);
             end
             if nargin < 2 || isempty(workbookPath)
-                error('swb:ReverseSync:missingWorkbook', '目标工作簿路径为空。');
+                % 目标工作簿未指定时，默认与 .sldd 同目录、同名（.xlsx）。
+                [wbDir, wbBase] = fileparts(dictPath);
+                workbookPath = fullfile(wbDir, [wbBase '.xlsx']);
+                % 由调用方或下方 withDefaults 的 Log 记录该行为。
             end
             workbookPath = char(workbookPath);
             [~, ~, we] = fileparts(workbookPath);

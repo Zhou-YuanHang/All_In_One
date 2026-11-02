@@ -1,7 +1,8 @@
 classdef Settings < handle
-    %SWB.SETTINGS 机器级配置（prefdir/simworkbench.json）。
-    %   旧工具把 python_config.json / template_config.json 放在 App 目录里，
-    %   安装到 Program Files 后不可写；这里统一放到 prefdir。
+    %SWB.SETTINGS 机器级配置（App 安装目录/simworkbench.json）。
+    %   配置文件与 App 一起放在安装目录（MATLAB Add-OnsAppsSimWorkbench，
+    %   位于用户 Roaming 下，可写）。首次使用若 App 目录里还没有配置文件，
+    %   会自动从旧版位置 prefdir/simworkbench.json 迁移一次。
 
     properties
         File = ''
@@ -19,8 +20,9 @@ classdef Settings < handle
             if nargin >= 1 && ~isempty(filePath)
                 obj.File = char(filePath);
             else
-                obj.File = fullfile(prefdir, 'simworkbench.json');
+                obj.File = obj.defaultFile();
             end
+            obj.migrateFromPrefdir();
             obj.load();
         end
 
@@ -93,6 +95,44 @@ classdef Settings < handle
 
         function tf = hasPythonPath(obj)
             tf = ~isempty(strtrim(obj.PythonPath));
+        end
+
+        function migrateFromPrefdir(obj)
+            %MIGRATEFROMPREFDIR 旧版配置在 prefdir，首次运行搬到 App 目录。
+            %   只在 App 目录还没有配置文件且 prefdir 里有旧配置时执行一次。
+            newFile = obj.File;
+            oldFile = fullfile(prefdir, 'simworkbench.json');
+            if isfile(newFile) || ~isfile(oldFile)
+                return;
+            end
+            try
+                copyfile(oldFile, newFile);
+            catch
+                % 迁移失败不影响启动：下次保存时会直接写到 App 目录
+            end
+        end
+    end
+
+    methods (Static)
+        function f = appRootPublic()
+            %APPROOTPUBLIC 供界面显示配置文件位置用。
+            f = swb.Settings.appRoot();
+        end
+    end
+
+    methods (Static, Access = private)
+        function f = appRoot()
+            %APPROOT App 安装目录（Settings.m 所在 +swb 包的上一级）。
+            try
+                f = fileparts(fileparts(mfilename('fullpath')));
+            catch
+                f = pwd;
+            end
+        end
+
+        function f = defaultFile()
+            %DEFAULTFILE App 安装目录下的 simworkbench.json。
+            f = fullfile(swb.Settings.appRoot(), 'simworkbench.json');
         end
     end
 end

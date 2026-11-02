@@ -78,3 +78,4 @@ desktop.ini
 # ---------- 通用临时文件 ----------
 *.log
 *.tmp
+app/simworkbench.json

@@ -2,7 +2,7 @@
 
 把"数据字典"和"建模"两条工作流合并为一个 MATLAB App：**一个窗口，两份 Excel，一次点击**。
 
-> 状态：**v1.7.1 / P5 已完成**。全量回归 **127/127 通过**（15 个测试类，约 75 s）；可安装包已双形态交付：**`build/SimWorkbench.mlappinstall`（已按 v1.7.1 重打，约 159 KB，双击安装、出现在 Apps 选项卡；包内**不含** `resources/+myPackage`）** 与 `build/SimWorkbench.mltbx`（工具箱，已按 v1.7.1 重打、同样不含 `resources/+myPackage`）。一键验收脚本 `build/final_verify.m` 会依次完成「打包 → 干净安装 → 启动冒烟 → 全量回归」。
+> 状态：**v1.7.2 / P5 已完成**。全量回归 **127/127 通过**（15 个测试类，约 75 s）；可安装包已双形态交付：**`build/SimWorkbench.mlappinstall`（已按 v1.7.1 重打，约 159 KB，双击安装、出现在 Apps 选项卡；包内**不含** `resources/+myPackage`）** 与 `build/SimWorkbench.mltbx`（工具箱，已按 v1.7.1 重打、同样不含 `resources/+myPackage`）。一键验收脚本 `build/final_verify.m` 会依次完成「打包 → 干净安装 → 启动冒烟 → 全量回归」。
 > 设计文档：[docs/design/all-in-one-design.md](docs/design/all-in-one-design.md)（v1.0）。旧工具源码 `src/` 已移除（原仓库 `F:\GithubRepos\AutoCreateModel`、`F:\GithubRepos\AutoCreateSldd` 仍在），分析结论留在 `docs/analysis/`。
 
 ![工作流页：一次真实的一键执行](docs/ui/ui_workflow_run.png)
@@ -229,7 +229,7 @@ mcp_verify('SkipTests', true)
 
 | 内容 | 位置 |
 |---|---|
-| 机器级设置 | `fullfile(prefdir,'simworkbench.json')`（Python 路径、默认 TLC/冲突策略、最近使用、模板 Config） |
+| 机器级设置 | App 安装目录下的 `simworkbench.json`（Python 路径、默认 TLC/冲突策略、最近使用、模板 Config；旧版 prefdir 配置首次运行自动迁移） |
 | 项目数据 | 两份 Excel 工作簿（唯一项目级数据源） |
 | 日志 | 内存 `Log.Entries`（上限 5000），手动导出，默认不落盘 |
 
@@ -259,6 +259,7 @@ Python 本机实测：`D:\SoftwareInstallation\Python3147\python.exe` + openpyxl
 | P5 交付（回归/打包/文档/边界） | ✅ 127/127 回归通过（v1.7.1）；`.mlappinstall` 与 `.mltbx` 均已按 v1.7.1 重打（两者都不含 `+myPackage`），干净安装/启动冒烟/安装副本自检通过 |
 | v1.1 修复 | ✅ 外部同名模型警告、保存后模型路径校验、目标目录为空时也检测外部同名模型 |
 | v1.2 验收 | ✅ `build/final_verify.m` 一键验收；`build/launch_app.m` 绕过 addon 注册启动；文档同步到 v1.2 |
+| v1.7.2 修复与改进 | ✅ SLDD → Excel 反向同步：Excel 路径为空时自动导出为与 `.sldd` 同目录同名 `.xlsx`（界面与服务层双层回退）；导出完成/失败给出明确状态栏与日志反馈；数据字典页浏览 `.sldd` 改用打开对话框（不再误弹替换确认）；清空日志修复 `uitextarea` 类型错误；设置页「默认冲突策略」接入模型页名称冲突下拉框（启动/重新读取时初始化）；求解器默认改为离散（Fixed-step） |
 | v1.7.1 修复 | ✅ 换字典工作簿后默认输出名不更新的问题：数据字典页的「对象脚本」/「数据字典」原来只在字段为空时填一次默认名，换工作簿就停在旧名字上；现改为**跟随字典工作簿**（`AutoScriptFile`/`AutoSlddFile` 记住上次自动值，字段为空或仍是自动值时才改写 `<base>_objects.m` / `<base>.sldd`，**手选过的路径保留**）。另外两个页面的「字典工作簿」双向同步：数据字典页手改路径会同步到工作流页并重新读取（`onDictWorkbookEdited`），工作流页「读取」也会把数据字典页刷新到同一路径（`syncDictWorkbookEdit`）。新增 `TestAppUI` 3 例（127/127，75.1 s；未重新打包） |
 | v1.7.1 打包 | ✅ App 安装包不再包含 `app/resources/+myPackage`：该目录只是本地 CSC 演示包（`useLocalCustomStorageClasses` 的 `@Signal`/`@Parameter` 示例），从源码树运行时由 `swb.Dictionary.ensurePackagePath` 按需 `addpath`；随包发布反而会在安装后把 `resources` 加进路径、遮蔽用户工程自己的 `+myPackage`。`make_appinstaller` 新增 `ExcludeResources`（默认 `{'+myPackage'}`），暂存时递归跳过、打包后解包产物二次校验；`final_verify` 增加安装副本 `INSTALLED_HAS_MYPACKAGE=0` 检查。包版本默认 `'1.6'` → `'1.7.1'`。重打后 `.mlappinstall` **42 个条目（zip 元数据 `version=1.7.1`）、无任何 `+myPackage` 条目**，字节数约 159 KB（精确值见 `build/final_report.txt` 的 `PACKAGE_BYTES`）；`final_verify` 完整验收 `127/127`、`LAUNCH_OK=1`、`INSTALLED_RESOURCES=1`、`INSTALLED_HAS_MYPACKAGE=0`。`.mltbx` 也按同一口径重打（`make_toolbox` 的 `ExcludeResources` + `packageHasEntry` 解包复核；192,549 字节 / 32 个源文件、45 个 zip 项，`Contents.m` 版本 1.7.1，无 `+myPackage`） |
 | v1.7.1 发布 | ✅ 定版：v1.7 的功能增补（导出 Excel 模板、默认名跟随字典工作簿、模型候选/默认端口名）与 v1.7.1 的打包口径（App 包与工具箱都不含 `+myPackage`）一并收口，标签 `v1.7.1`；`.mlappinstall` 约 159 KB / 42 项、`.mltbx` 192,549 字节 / 45 项，`final_verify` 127/127 |

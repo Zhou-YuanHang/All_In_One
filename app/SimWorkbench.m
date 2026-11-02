@@ -337,7 +337,7 @@ classdef SimWorkbench < handle
 
             app.mkLabel(gl, '求解器', 3, 1);
             app.H.solverDrop = uidropdown(gl, 'Items', {'连续（Variable-step）','离散（Fixed-step）'}, ...
-                'Value', '连续（Variable-step）');
+                'Value', '离散（Fixed-step）');
             app.H.solverDrop.Layout.Row = 3;
             app.H.solverDrop.Layout.Column = 2;
 
@@ -398,7 +398,7 @@ classdef SimWorkbench < handle
             g.RowHeight = {'fit', '1x'};
             g.Padding = [12, 12, 12, 12];
             g.RowSpacing = 8;
-            app.pageTitle(g, '设置', '机器级配置保存在 prefdir/simworkbench.json', 1);
+            app.pageTitle(g, '设置', ['机器级配置保存在 App 安装目录下：', swb.Settings.appRootPublic(), filesep, 'simworkbench.json'], 1);
 
             p = uipanel(g, 'Title', '环境与默认值');
             p.Layout.Row = 2;
@@ -733,7 +733,8 @@ classdef SimWorkbench < handle
                 case 'script'
                     [f, d] = app.pickSaveFile({'*.m', 'MATLAB 脚本 (*.m)'}, '对象脚本保存为', 'objects.m');
                 otherwise
-                    [f, d] = app.pickSaveFile({'*.sldd', '数据字典 (*.sldd)'}, '数据字典保存为', 'dict.sldd');
+                    % 选择已有字典用打开对话框；新建字典名可手填或由工作簿自动推导。
+                    [f, d] = app.pickOpenFile({'*.sldd', '数据字典 (*.sldd)'}, '选择数据字典');
             end
             if isequal(f, 0)
                 return;
@@ -817,11 +818,32 @@ classdef SimWorkbench < handle
                         return;
                     end
                     sldd = strtrim(app.H.slddEdit.Value);
+                    if isempty(dictPath)
+                        % Excel 路径为空时，自动命名为与 .sldd 同目录同名（.xlsx）。
+                        [slddDir, slddBase] = fileparts(sldd);
+                        dictPath = fullfile(slddDir, [slddBase '.xlsx']);
+                        app.Log.info('Excel 路径为空，自动导出到：%s', dictPath);
+                    end
                     opts = struct('CleanExcel', logical(app.H.cleanExcelChk.Value), ...
                                   'Exe', app.Settings.PythonPath, 'Log', app.Log, ...
                                   'Config', app.Settings.TemplateConfig);
                     result = swb.ReverseSync.toWorkbook(sldd, dictPath, opts);
-                    app.Log.info('反向同步完成，共 %d 张表。', numel(fieldnames(result.rows)));
+                    counts = result.rows;
+                    if result.ok
+                        app.Log.info('SLDD → Excel 导出完成：%s（Signal %d / Parameter %d / Const %d / Bus %d / BusElement %d / Enum %d）。', ...
+                            result.workbookPath, counts.Signal, counts.Parameter, counts.Const, ...
+                            counts.Bus, counts.BusElement, counts.Enum);
+                        app.setStatus(sprintf('导出完成：%s', result.workbookPath), 'ok');
+                        app.updateStep(4, '完成', 'SLDD → Excel');
+                    else
+                        msg = 'SLDD → Excel 导出失败。';
+                        if ~isempty(result.errorText)
+                            msg = [msg ' ' result.errorText];
+                        end
+                        app.Log.err('%s', msg);
+                        app.setStatus(msg, 'error');
+                        app.updateStep(4, '有问题', 'SLDD → Excel');
+                    end
                 case 'template'
                     if ~app.hasService('swb.TemplateExport')
                         app.notReady('swb.TemplateExport');
@@ -1156,6 +1178,19 @@ classdef SimWorkbench < handle
                     otherwise
                         app.H.defaultConflictDrop.Value = '询问';
                 end
+                % 用默认冲突策略初始化模型页下拉框（模型页仍可临时改，执行时以模型页为准）。
+                if isfield(app.H, 'conflictDrop') && ~isempty(app.H.conflictDrop) && isvalid(app.H.conflictDrop)
+                    switch app.Settings.ConflictPolicy
+                        case 'overwrite'
+                            app.H.conflictDrop.Value = '覆盖';
+                        case 'suffix'
+                            app.H.conflictDrop.Value = '加数字后缀';
+                        case 'cancel'
+                            app.H.conflictDrop.Value = '取消';
+                        otherwise
+                            app.H.conflictDrop.Value = '询问';
+                    end
+                end
             end
             if isfield(app.H, 'templateCfgInfo') && isvalid(app.H.templateCfgInfo)
                 app.H.templateCfgInfo.Text = app.templateConfigSummary();
@@ -1244,7 +1279,7 @@ classdef SimWorkbench < handle
         function onClearLog(app)
             app.Log.clear();
             if isfield(app.H, 'logArea') && isvalid(app.H.logArea)
-                app.H.logArea.Value = {};
+                app.H.logArea.Value = '';
             end
             app.H.countLabel.Text = '';
         end

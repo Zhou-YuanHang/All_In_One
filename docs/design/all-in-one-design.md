@@ -1,6 +1,6 @@
 # All-in-One SimWorkbench —— 设计文档（v1.0）
 
-> 状态：**v1.7.1：P1–P5 已完成**（全量回归 127/127；`.mlappinstall` 已按 v1.7.1 重打，**不含 `resources/+myPackage`**（见 §9.6 第 21 条），**约 159 KB**（42 项，精确值见 `build/final_report.txt` 的 `PACKAGE_BYTES`）；`.mltbx` 工具箱同样按 v1.7.1 重打、同样不含 `resources/+myPackage`（192,549 字节 / 45 项）；一键验收脚本 `build/final_verify.m`，桌面侧 `build/mcp_verify.m`）。本文档描述当前代码的真实形态，不是提案。
+> 状态：**v1.7.2：P1–P5 已完成**（全量回归 127/127；`.mlappinstall` 已按 v1.7.1 重打，**不含 `resources/+myPackage`**（见 §9.6 第 21 条），**约 159 KB**（42 项，精确值见 `build/final_report.txt` 的 `PACKAGE_BYTES`）；`.mltbx` 工具箱同样按 v1.7.1 重打、同样不含 `resources/+myPackage`（192,549 字节 / 45 项）；一键验收脚本 `build/final_verify.m`，桌面侧 `build/mcp_verify.m`）。本文档描述当前代码的真实形态，不是提案。
 > 版本历史：v0.2 → v0.3 增补 §6.3 第 11–12 条（同名模型检测、保存后路径校验）、§9.6（v1.1/v1.2 修复与验收脚本）、更新 §9.5、§10、§11 的实测数字；v0.3 → v0.4 增补 §9.6 的 v1.3 条目（`swb.Pipeline` 接受 `Schema.modelConfigDefaults()` 字段名）、§9.1 的 `TestPipeline`（共 76 个方法 / 10 个类）、§9.3/§9.5 的 MATLAB MCP 验证路径（`build/mcp_verify.m`），并把实测数字更新到 v1.3（139,712 字节 / 54.51 s）；v0.4 → v0.5 记录 v1.4 的窗口焦点修复（§9.6 第 14 条，addendum `TestAppUI` 3 例）与 `79/79`、48.78 s 的实测数字；v0.5 → v0.6 记录 v1.5 的模板 Config 编辑对话框（§7.2、§9.6 第 15 条，`swb.TemplateConfig` + `swb.ui.TemplateConfigDialog`），数字更新为 `98/98`、58.21 s、包 150,611 字节；v0.6 → v0.7 记录 v1.6 的「模型名称可编辑下拉 + 现有模型候选 + 导出默认名 `<模型名>_ports.xlsx`」（§5.10、§5.10b、§9.6 第 15–16 条），数字更新为 `112/112`、69.9 s、包 157,433 字节；v0.7 → v0.8 记录 v1.7 恢复数据字典页「导出 Excel 模板…」入口（`swb.TemplateExport` 的 `toWorkbook`/`defaultFile`/`writeMatlabBasic`，§5.11b、§9.6 第 17–18 条），`ReverseSync` 的内联 `writeMatlabTemplate` 收敛到 `writeMatlabBasic`，数字更新为 `124/124`、57.9 s（打包产物仍为 v1.6，未重打包）；v0.8 → v0.9 记录 v1.7.1 的字典工作簿切换修复（默认输出名跟随工作簿 + 两页路径同步，§9.6 第 19–20 条），数字更新为 `127/127`、75.1 s（新增 `TestAppUI` 3 例；仍未重打包）；v0.9 → v1.0 记录 App 打包口径变更（`make_appinstaller` 默认排除 `resources/+myPackage`，包版本 1.6 → 1.7.1，并解包产物二次校验、`final_verify` 断言安装副本不含该目录；§9.5、§9.6 第 21 条）与本次重打/完整验收的实测数字。
 > 前版 v0.1 的"统一工作簿（8 表 + Inputs/Outputs + Model 三合一）"方案**已作废**；现行为**两份独立 Excel 契约**（见 §3）。
 > 依据：[NewModelApp 分析](../analysis/newmodelapp.md) · [AutoCreateSldd 分析](../analysis/autocreatesldd.md) · 代码：`app/SimWorkbench.m`、`app/+swb/*.m`。
@@ -25,7 +25,7 @@
 | 主类 | [app/SimWorkbench.m](../../app/SimWorkbench.m)（1560 行） |
 | 服务层 | [app/+swb/](../../app/+swb/)（19 个类，另有 `+ui/TemplateConfigDialog`；静态方法为主） |
 | 窗口 | `uifigure`，默认 1280×840，左侧 `uitabgroup`（`TabLocation='left'`），5 页 |
-| 机器级配置 | `fullfile(prefdir,'simworkbench.json')` |
+| 机器级配置 | App 安装目录下的 `simworkbench.json`（旧版 prefdir 配置首次运行自动迁移） |
 | 测试 | `tests/runAll.m` + `tests/+swbtest/`（15 个测试类、127 个测试方法，实测全绿） |
 | 冒烟/截图 | `tools/smoke_*.m`、`tools/preview_ui.m`（静态）、`tools/preview_ui_run.m`（真实运行） |
 | 打包 | `build/make_appinstaller.m` → `build/SimWorkbench.mlappinstall`（官方 App 安装包，双击安装，出现在 Apps 选项卡）；备选 `build/make_toolbox.m` → `build/SimWorkbench.mltbx` |
@@ -370,7 +370,7 @@ Python 路径只来自配置（`Settings.PythonPath` 或显式 `opts.Exe`），*
 ### 5.14 `swb.Settings`（handle）
 
 属性：`File, PythonPath, DefaultTlc, LastDictWorkbook, LastPortWorkbook, LastOutputDir, ConflictPolicy, TemplateConfig`。
-方法：`load()`、`save()`、`tf = hasPythonPath()`。默认文件 `fullfile(prefdir,'simworkbench.json')`。
+方法：`load()`、`save()`、`tf = hasPythonPath()`。默认文件为 App 安装目录下的 `simworkbench.json`（Add-Ons 目录在用户 Roaming 下可写；旧版 prefdir 配置首次运行自动迁移）。
 
 ### 5.15 `swb.Log`（handle）
 
@@ -459,7 +459,7 @@ Python 路径只来自配置（`Settings.PythonPath` 或显式 `opts.Exe`），*
 
 | 内容 | 位置 | 说明 |
 |---|---|---|
-| 机器级设置 | `fullfile(prefdir,'simworkbench.json')` | 避开 Program Files 只读；键：PythonPath、DefaultTlc、Last*、ConflictPolicy、TemplateConfig |
+| 机器级设置 | App 安装目录下的 `simworkbench.json` | Add-Ons 目录在用户 Roaming 下可写；键：PythonPath、DefaultTlc、Last*、ConflictPolicy、TemplateConfig |
 | 项目级模型参数 | 模型页控件（当前不写入工作簿） | v0.1 设想的 `Model` 表**已作废**，不再读取 |
 | 端口与字典数据 | 两份 Excel 工作簿 | 唯一项目级数据源 |
 | 运行日志 | 内存 `Log.Entries`（上限 5000 条），可导出 | 默认不落盘 |
@@ -675,6 +675,7 @@ mcp_verify('SkipTests', true) % 只跑流水线冒烟与 App 冒烟
 | v1.4 | 文件对话框后窗口回焦（6 个私有方法 + 14 处调用点收口）+ `TestAppUI` | ✅ 完成（§9.6 第 14 条） |
 | v1.5 | 设置页模板 Config 编辑对话框（`swb.TemplateConfig` + `swb.ui.TemplateConfigDialog`）并接入反向同步模板生成 | ✅ 完成（§9.6 第 15 条，`TestTemplateConfig` 12 例 + `TestTemplateConfigDialog` 6 例） |
 | v1.6 | 模型名称可编辑下拉 + 现有模型候选（`swb.ModelCatalog`）+ 导出默认名 `<模型名>_ports.xlsx` | ✅ 完成（§9.6 第 15–16 条，`TestModelCatalog` 8 例 + `TestPortExport` 2 例 + `TestAppUI` 2 例） |
+| v1.7.2 | SLDD → Excel 反向同步目标工作簿自动命名（`.sldd` 同目录同名 `.xlsx`，`ReverseSync.toWorkbook` 与界面双层回退）；导出完成/失败状态反馈；数据字典页 `.sldd` 浏览改 `uigetfile`；`onClearLog` 修复 `uitextarea` 赋值类型；设置默认冲突策略初始化模型页 `conflictDrop`（`applySettingsToUI`）；求解器默认 `Discrete`（Schema 与 UI） |
 | v1.7.1 | 换字典工作簿后「对象脚本」/「数据字典」默认名跟随（`AutoScriptFile`/`AutoSlddFile`/`followsAutoOutput`），两页字典工作簿路径双向同步（`syncDictWorkbookEdit`/`onDictWorkbookEdited`）；App 打包排除 `resources/+myPackage`（`ExcludeResources`） | ✅ 完成（§9.6 第 19–20、21 条，`TestAppUI` 新增 3 例，127/127，75.1 s；包已按 v1.7.1 重打） |
 | v1.7 | 恢复「导出 Excel 模板…」入口（`swb.TemplateExport`），`ReverseSync` 复用 `writeMatlabBasic` | ✅ 完成（§5.11b、§9.6 第 17–18 条，`TestTemplateExport` 11 例 + `TestAppUI` 第 7 例，124/124） |
 
