@@ -85,6 +85,109 @@ classdef SimWorkbench < handle
             %RUNPIPELINE 与"一键执行"按钮同一路径（脚本/自动化调用）。
             app.onRunPipeline();
         end
+
+        % ---------------- 常用路径（公共：供测试与脚本驱动） ----------------
+        function onFavCellSelected(app, evt)
+            % 选中表格行时记录行号并把路径填进输入框，便于查看/复制。
+            if isempty(evt.Indices)
+                return;
+            end
+            r = evt.Indices(1);
+            app.H.favSelectedRow = r;
+            if r <= numel(app.Settings.FavoritePaths)
+                app.H.favNewEdit.Value = app.Settings.FavoritePaths{r};
+            end
+        end
+
+        function onFavGoTo(app)
+            p = app.favSelectedPath();
+            if isempty(p)
+                app.H.favStatus.Text = '请先在上方表格中选择一个路径。';
+                return;
+            end
+            try
+                cd(p);
+                app.H.favStatus.Text = ['✓ 已切换到 ', p];
+                app.Log.info('MATLAB 当前目录已切换: %s', p);
+            catch ME
+                app.H.favStatus.Text = ['✗ 切换失败: ', ME.message];
+                app.Log.warn('切换目录失败 %s: %s', p, ME.message);
+            end
+        end
+
+        function onFavOpenExplorer(app)
+            p = app.favSelectedPath();
+            if isempty(p)
+                app.H.favStatus.Text = '请先在上方表格中选择一个路径。';
+                return;
+            end
+            try
+                winopen(p);
+                app.H.favStatus.Text = ['✓ 已在资源管理器打开 ', p];
+            catch ME
+                app.H.favStatus.Text = ['✗ 打开失败: ', ME.message];
+                app.Log.warn('资源管理器打开失败 %s: %s', p, ME.message);
+            end
+        end
+
+        function onFavBrowseAdd(app)
+            d = app.pickFolder(strtrim(app.H.favNewEdit.Value), '选择要添加的常用路径');
+            if isequal(d, 0)
+                return;
+            end
+            app.H.favNewEdit.Value = d;
+            app.onFavAdd();
+        end
+
+        function onFavAdd(app)
+            p = strtrim(app.H.favNewEdit.Value);
+            if isempty(p)
+                app.H.favStatus.Text = '请先输入或浏览一个文件夹路径。';
+                return;
+            end
+            if ~isfolder(p)
+                app.H.favStatus.Text = ['✗ 路径不存在或不是文件夹: ', p];
+                return;
+            end
+            app.Settings.addFavoritePath(p);
+            app.H.favNewEdit.Value = '';
+            app.refreshFavoritePaths();
+            app.H.favStatus.Text = ['✓ 已添加 ', p];
+            app.Log.info('常用路径已添加: %s', p);
+        end
+
+        function onFavRemove(app)
+            p = app.favSelectedPath();
+            if isempty(p)
+                app.H.favStatus.Text = '请先在上方表格中选择要删除的路径。';
+                return;
+            end
+            app.Settings.removeFavoritePath(p);
+            app.refreshFavoritePaths();
+            app.H.favStatus.Text = ['✓ 已删除 ', p];
+            app.Log.info('常用路径已删除: %s', p);
+        end
+
+        function refreshFavoritePaths(app)
+            if ~isfield(app.H, 'favTable') || ~isvalid(app.H.favTable)
+                return;
+            end
+            data = cell(numel(app.Settings.FavoritePaths), 1);
+            for k = 1:numel(data)
+                data{k} = app.Settings.FavoritePaths{k};
+            end
+            app.H.favTable.Data = data;
+        end
+
+        function p = favSelectedPath(app)
+            % 返回表格中当前选中的常用路径（无选中或越界返回空）。
+            p = '';
+            r = app.H.favSelectedRow;
+            if r < 1 || r > numel(app.Settings.FavoritePaths)
+                return;
+            end
+            p = app.Settings.FavoritePaths{r};
+        end
     end
 
     % =====================================================================
@@ -394,8 +497,8 @@ classdef SimWorkbench < handle
 
         % ---------------- 设置页 ----------------
         function buildSettingsTab(app, tab)
-            g = uigridlayout(tab, [2, 1]);
-            g.RowHeight = {'fit', '1x'};
+            g = uigridlayout(tab, [3, 1]);
+            g.RowHeight = {'fit', '1x', 'fit'};
             g.Padding = [12, 12, 12, 12];
             g.RowSpacing = 8;
             app.pageTitle(g, '设置', ['机器级配置保存在 App 安装目录下：', swb.Settings.appRootPublic(), filesep, 'simworkbench.json'], 1);
@@ -439,6 +542,8 @@ classdef SimWorkbench < handle
             app.mkButton(btns, '保存设置', 1, 1, @(~, ~) app.onSaveSettings(), ...
                 'FontWeight','bold', 'BackgroundColor', [0.15, 0.55, 0.15], 'FontColor', [1,1,1]);
             app.mkButton(btns, '重新读取', 1, 2, @(~, ~) app.applySettingsToUI());
+
+            app.buildFavoritePathsPanel(g);
         end
 
         % ---------------- 日志页 ----------------
@@ -514,6 +619,43 @@ classdef SimWorkbench < handle
             fr.edit.Layout.Column = 2;
             app.mkButton(g, '浏览…', 1, 3, browseFcn);
         end
+
+        % ---------------- 常用路径 ----------------
+        function buildFavoritePathsPanel(app, parent)
+            fp = uipanel(parent, 'Title', '常用路径');
+            fp.Layout.Row = 3;
+            fp.Layout.Column = 1;
+            gf = uigridlayout(fp, [2, 1]);
+            gf.RowHeight = {'1x', 'fit'};
+            gf.Padding = [10, 8, 10, 8];
+            gf.RowSpacing = 6;
+
+            app.H.favSelectedRow = 0;   % 当前选中行（uitable 无可读的选中属性，自行维护）
+            app.H.favTable = uitable(gf, 'ColumnName', {'路径'}, 'Data', cell(0, 1), ...
+                'RowName', [], 'ColumnWidth', {'auto'}, 'CellSelectionCallback', @(~, evt) app.onFavCellSelected(evt));
+            app.H.favTable.Layout.Row = 1;
+            app.H.favTable.Layout.Column = 1;
+
+            fb = uigridlayout(gf, [2, 4]);
+            fb.Layout.Row = 2;
+            fb.Layout.Column = 1;
+            fb.RowHeight = {'fit', 'fit'};
+            fb.ColumnWidth = {170, 190, '1x', 90};
+            fb.Padding = [0, 0, 0, 0];
+            fb.RowSpacing = 4;
+
+            app.mkButton(fb, '切换到该文件夹', 1, 1, @(~, ~) app.onFavGoTo());
+            app.mkButton(fb, '在资源管理器打开', 1, 2, @(~, ~) app.onFavOpenExplorer());
+            app.H.favStatus = app.mkLabel(fb, '', 1, [3, 4], 'FontColor', [0.45, 0.45, 0.45]);
+
+            app.H.favNewEdit = uieditfield(fb, 'text', 'Placeholder', '输入或浏览要添加的文件夹路径…');
+            app.H.favNewEdit.Layout.Row = 2;
+            app.H.favNewEdit.Layout.Column = [1, 2];
+            app.mkButton(fb, '浏览…', 2, 3, @(~, ~) app.onFavBrowseAdd());
+            app.mkButton(fb, '删除', 2, 4, @(~, ~) app.onFavRemove(), 'Tooltip', '删除选中的常用路径');
+            app.refreshFavoritePaths();
+        end
+
     end
 
     % =====================================================================

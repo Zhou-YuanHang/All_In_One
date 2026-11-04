@@ -13,6 +13,7 @@ classdef Settings < handle
         LastOutputDir = ''
         ConflictPolicy = 'ask'      % ask | overwrite | suffix | cancel
         TemplateConfig = struct()   % Config 表候选值 {key -> cellstr}
+        FavoritePaths = {}          % 常用路径 cellstr（用户手动维护）
     end
 
     methods
@@ -47,6 +48,17 @@ classdef Settings < handle
                     obj.(f) = char(s.(f));
                 end
             end
+            if isfield(s, 'FavoritePaths')
+                v = s.FavoritePaths;
+                if ischar(v) || isstring(v)
+                    v = cellstr(v);
+                end
+                if iscell(v)
+                    v = cellfun(@char, v(:)', 'UniformOutput', false);
+                    v = v(~cellfun(@isempty, strtrim(v)));
+                    obj.FavoritePaths = v;
+                end
+            end
             if isfield(s, 'TemplateConfig') && isstruct(s.TemplateConfig)
                 cfg = swb.Schema.defaultConfig();
                 keys = fieldnames(cfg);
@@ -77,6 +89,7 @@ classdef Settings < handle
             s.LastOutputDir = obj.LastOutputDir;
             s.ConflictPolicy = obj.ConflictPolicy;
             s.TemplateConfig = obj.TemplateConfig;
+            s.FavoritePaths = obj.FavoritePaths;
             try
                 d = fileparts(obj.File);
                 if ~isempty(d) && ~isfolder(d)
@@ -91,6 +104,27 @@ classdef Settings < handle
             catch
                 % 配置写失败不阻断业务
             end
+        end
+
+        function addFavoritePath(obj, p)
+            %ADDFAVORITEPATH 添加常用路径（去重，已存在则置顶）。
+            p = char(strtrim(p));
+            if isempty(p) || ~isfolder(p)
+                return;
+            end
+            list = obj.FavoritePaths;
+            list = list(~strcmpi(list, p));
+            obj.FavoritePaths = [{p}, list(:)'];
+            obj.save();
+        end
+
+        function removeFavoritePath(obj, p)
+            %REMOVEFAVORITEPATH 删除常用路径。
+            p = char(strtrim(p));
+            list = obj.FavoritePaths;
+            list = list(~strcmpi(list, p));
+            obj.FavoritePaths = list;
+            obj.save();
         end
 
         function tf = hasPythonPath(obj)
