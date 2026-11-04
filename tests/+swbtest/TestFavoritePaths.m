@@ -38,9 +38,11 @@ classdef TestFavoritePaths < swbtest.SwbTestBase
         end
 
         function testFavoritePanelExists(tc)
-            % 设置页应有常用路径表格和四个操作按钮
+            % 应有独立的「常用路径」选项卡，含表格和四个操作按钮
             app = SimWorkbench('Visible', 'off');
             tc.addTeardown(@() delete(app));
+            tabObjs = findall(app.TabGroup, 'Type', 'uitab');
+            tc.verifyTrue(any(strcmp(arrayfun(@(x) x.Title, tabObjs, 'UniformOutput', false), '常用路径')), '应有常用路径选项卡');
             tc.verifyClass(app.H.favTable, 'matlab.ui.control.Table');
             tc.verifyTrue(all(isfield(app.H, {'favNewEdit', 'favStatus'})));
             src = fileread(which('SimWorkbench'));

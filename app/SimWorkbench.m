@@ -215,6 +215,7 @@ classdef SimWorkbench < handle
             app.buildWorkflowTab(uitab(app.TabGroup, 'Title', '工作流'));
             app.buildDictTab(uitab(app.TabGroup, 'Title', '数据字典'));
             app.buildModelTab(uitab(app.TabGroup, 'Title', '模型与端口'));
+            app.buildFavoritePathsTab(uitab(app.TabGroup, 'Title', '常用路径'));
             app.buildSettingsTab(uitab(app.TabGroup, 'Title', '设置'));
             app.buildLogTab(uitab(app.TabGroup, 'Title', '日志'));
 
@@ -497,8 +498,8 @@ classdef SimWorkbench < handle
 
         % ---------------- 设置页 ----------------
         function buildSettingsTab(app, tab)
-            g = uigridlayout(tab, [3, 1]);
-            g.RowHeight = {'fit', '1x', 'fit'};
+            g = uigridlayout(tab, [2, 1]);
+            g.RowHeight = {'fit', '1x'};
             g.Padding = [12, 12, 12, 12];
             g.RowSpacing = 8;
             app.pageTitle(g, '设置', ['机器级配置保存在 App 安装目录下：', swb.Settings.appRootPublic(), filesep, 'simworkbench.json'], 1);
@@ -542,8 +543,6 @@ classdef SimWorkbench < handle
             app.mkButton(btns, '保存设置', 1, 1, @(~, ~) app.onSaveSettings(), ...
                 'FontWeight','bold', 'BackgroundColor', [0.15, 0.55, 0.15], 'FontColor', [1,1,1]);
             app.mkButton(btns, '重新读取', 1, 2, @(~, ~) app.applySettingsToUI());
-
-            app.buildFavoritePathsPanel(g);
         end
 
         % ---------------- 日志页 ----------------
@@ -621,9 +620,11 @@ classdef SimWorkbench < handle
         end
 
         % ---------------- 常用路径 ----------------
-        function buildFavoritePathsPanel(app, parent)
-            fp = uipanel(parent, 'Title', '常用路径');
-            fp.Layout.Row = 3;
+        function buildFavoritePathsTab(app, tab)
+            tg = uigridlayout(tab, [1, 1]);
+            tg.Padding = [0, 0, 0, 0];
+            fp = uipanel(tg, 'Title', '常用路径', 'FontWeight', 'bold');
+            fp.Layout.Row = 1;
             fp.Layout.Column = 1;
             gf = uigridlayout(fp, [2, 1]);
             gf.RowHeight = {'1x', 'fit'};

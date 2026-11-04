@@ -153,7 +153,8 @@ UI  SimWorkbench  →  Pipeline.run(cfg)  →  领域服务  →  基础设施
 | 工作流 | 两份工作簿路径 + 能力探测、6 行步骤表、一键执行、结果摘要 |
 | 数据字典 | 表多选、4 个开关（校验/写前确认/删多余/清 Excel）、脚本与 `.sldd` 路径（默认名跟随字典工作簿，手选路径保留）、校验/预览/生成/写入/反向同步/导出模板、问题表 |
 | 模型与端口 | 模型名（**可手写 + 可选现有模型**）/目录/求解器/步长/TLC/GenCodeOnly/字典/端口工作簿/映射/打开/冲突策略、7 列端口预览、创建/更新/导出 |
-| 设置 | Python 路径（测试）、默认 TLC、默认冲突策略、模板 Config（编辑对话框，v1.5）、常用路径（添加/删除，MATLAB 切换或资源管理器打开） |
+| 设置 | Python 路径（测试）、默认 TLC、默认冲突策略、模板 Config（编辑对话框，v1.5） |
+| 常用路径 | 记录常用文件夹：MATLAB 切换到该文件夹、在资源管理器打开，支持添加/删除 |
 | 日志 | 实时追加、清空/复制/导出 |
 
 静态截图：[工作流](docs/ui/ui_workflow.png) · [数据字典](docs/ui/ui_dict.png) · [模型与端口](docs/ui/ui_model.png) · [设置](docs/ui/ui_settings.png) · [日志](docs/ui/ui_log.png) · [模板 Config 编辑器](docs/ui/ui_template_config.png)（由 `tools/preview_ui.m` 用测试夹具生成，最后一张是 v1.5 的设置页模态对话框：8 列候选值、一行一个、底部实时计数）。
