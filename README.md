@@ -2,7 +2,7 @@
 
 把"数据字典"和"建模"两条工作流合并为一个 MATLAB App：**一个窗口，两份 Excel，一次点击**。
 
-> 状态：**v1.7.2 / P5 已完成**。全量回归 **127/127 通过**（15 个测试类，约 75 s）；可安装包已双形态交付：**`build/SimWorkbench.mlappinstall`（已按 v1.7.1 重打，约 159 KB，双击安装、出现在 Apps 选项卡；包内**不含** `resources/+myPackage`）** 与 `build/SimWorkbench.mltbx`（工具箱，已按 v1.7.1 重打、同样不含 `resources/+myPackage`）。一键验收脚本 `build/final_verify.m` 会依次完成「打包 → 干净安装 → 启动冒烟 → 全量回归」。
+> 状态：**v1.7.2 / P5 已完成**。全量回归 **133/133 通过**（16 个测试类，约 90 s）；可安装包已双形态交付：**`build/SimWorkbench.mlappinstall`（已按 v1.7.1 重打，约 159 KB，双击安装、出现在 Apps 选项卡；包内**不含** `resources/+myPackage`）** 与 `build/SimWorkbench.mltbx`（工具箱，已按 v1.7.1 重打、同样不含 `resources/+myPackage`）。一键验收脚本 `build/final_verify.m` 会依次完成「打包 → 干净安装 → 启动冒烟 → 全量回归」。
 > 设计文档：[docs/design/all-in-one-design.md](docs/design/all-in-one-design.md)（v1.0）。旧工具源码 `src/` 已移除（原仓库 `F:\GithubRepos\AutoCreateModel`、`F:\GithubRepos\AutoCreateSldd` 仍在），分析结论留在 `docs/analysis/`。
 
 ![工作流页：一次真实的一键执行](docs/ui/ui_workflow_run.png)
@@ -105,7 +105,7 @@ matlab -batch "cd('F:\GithubRepos\All_In_One'); addpath('app'); addpath('tests')
 ```
 All_In_One/
 ├─ app/
-│  ├─ SimWorkbench.m          # 唯一入口：uifigure + 5 页
+│  ├─ SimWorkbench.m          # 唯一入口：uifigure + 6 页
 │  ├─ +swb/                   # 19 个服务类（无 UI 依赖）
 │  │   Schema Workbook PortTable Settings Log Issue PythonService
 │  │   Validator ScriptBuilder Dictionary ReverseSync
@@ -116,14 +116,14 @@ All_In_One/
 │  └─ resources/              # python 模板/反向脚本；+myPackage（CSC 注册）不随 App 打包
 ├─ tests/
 │  ├─ runAll.m                # runtests(...,'IncludeSubfolders',true)
-│  ├─ +swbtest/               # 15 个测试类、127 个测试方法（含 TestPipeline、TestAppUI、TestModelCatalog、TestTemplateExport、TestTemplateConfig、TestTemplateConfigDialog）
+│  ├─ +swbtest/               # 16 个测试类、133 个测试方法（含 TestPipeline、TestAppUI、TestModelCatalog、TestTemplateExport、TestTemplateConfig、TestTemplateConfigDialog、TestFavoritePaths）
 │  ├─ +swbfixture/Workbooks.m # 8 表字典 / 7 列端口 样本生成
 │  └─ +swbfixture/golden/     # 旧实现的冻结 golden 样本（objects_legacy.txt / gear_legacy.txt）
 ├─ tools/                     # smoke_p1 / smoke_dict / smoke_model / smoke_pipeline / preview_ui
 ├─ docs/
 │  ├─ design/all-in-one-design.md   # v1.0 设计（架构、API、契约、修复对照、验收）
 │  ├─ analysis/{newmodelapp,autocreatesldd}.md
-│  └─ ui/                     # 6 张界面截图（5 页 + 模板 Config 编辑器）
+│  └─ ui/                     # 6 张界面截图（页面 + 模板 Config 编辑器）
 ```
 
 ---
@@ -146,7 +146,7 @@ UI  SimWorkbench  →  Pipeline.run(cfg)  →  领域服务  →  基础设施
 
 ---
 
-## 五页界面
+## 六页界面
 
 | 页 | 内容 |
 |---|---|
@@ -189,7 +189,7 @@ UI  SimWorkbench  →  Pipeline.run(cfg)  →  领域服务  →  基础设施
 
 | 命令 | 作用 |
 |---|---|
-| `matlab -batch "…; addpath('app'); addpath('tests'); runAll"` | 全量单元/集成测试（15 类 127 方法，约 75 s） |
+| `matlab -batch "…; addpath('app'); addpath('tests'); runAll"` | 全量单元/集成测试（16 类 133 方法，约 90 s） |
 | `matlab -batch "…; addpath('build'); final_verify"` | **一键验收**：打包 → 干净安装 → 启动冒烟 → 安装副本修复自检 → 全量回归（报告 `build/final_report.txt`） |
 | `addpath('build'); mcp_verify`（经 MATLAB MCP 执行） | 在**可见桌面会话**里跑同一套验收：流水线冒烟 + 全量回归 + App 构造/销毁（报告 `build/mcp_verify_report.txt`） |
 | `… addpath('tools'); smoke_p1` | 基础层（Schema/Log/Settings/Workbook/PortTable） |
@@ -203,7 +203,9 @@ UI  SimWorkbench  →  Pipeline.run(cfg)  →  领域服务  →  基础设施
 
 环境实测（R2024b Update 8）：`license('test')` 显示 `Simulink_Coder=0 / Embedded_Coder=0`，但 `coder.mapping` API 实际可用（`initialized=1`、`appliedIn/appliedOut` 生效且可回读），因此 Code Mapping 采用"先试后降级"，不设许可门禁。详见设计文档 §9.4。
 
-**已记录的全量回归**（2026-10-31，R2024b Update 8，v1.7.1）：`127 Passed, 0 Failed, 0 Incomplete`，75.1 s（`matlab -batch` 实测；同机 v1.7 的 124 例为 57.9 s，差异主要来自新增的 App 构造类用例与负载）；测试类分布 TestDictionary 8 / TestModelBuilder 14 / TestModelCatalog 8 / TestPortSync 8 / TestPortExport 7 / TestCodeMapping 8 / TestValidator 13 / TestScriptBuilder 6 / TestPythonService 8 / TestReverseSync 4 / TestPipeline 2 / TestAppUI 10 / TestTemplateConfig 12 / TestTemplateConfigDialog 6 / TestTemplateExport 11。
+**已记录的全量回归**（2026-11-04，R2024b Update 8，常用路径选项卡）：`133 Passed, 0 Failed, 0 Incomplete`（桌面会话实测）；测试类分布 TestDictionary 8 / TestModelBuilder 14 / TestModelCatalog 8 / TestPortSync 8 / TestPortExport 7 / TestCodeMapping 8 / TestValidator 13 / TestScriptBuilder 6 / TestPythonService 8 / TestReverseSync 4 / TestPipeline 2 / TestAppUI 10 / TestTemplateConfig 12 / TestTemplateConfigDialog 6 / TestTemplateExport 11 / TestFavoritePaths 6。
+
+> 此前记录（2026-10-31，v1.7.1）：`127 Passed, 0 Failed`，75.1 s（`matlab -batch`）。
 
 > 该数字来自 `build/final_verify.m` 的**完整验收序列**（先打包+安装+启动，再跑测试）——此时安装副本的 `+swb` 在 MATLAB 路径上，比"只跑测试"更接近用户真实环境。
 
@@ -214,13 +216,13 @@ UI  SimWorkbench  →  Pipeline.run(cfg)  →  领域服务  →  基础设施
 ```matlab
 addpath('F:\GithubRepos\All_In_One\app', 'F:\GithubRepos\All_In_One\tests', ...
         'F:\GithubRepos\All_In_One\build');
-mcp_verify                 % 流水线冒烟 + 127 个测试 + App 构造/销毁
+mcp_verify                 % 流水线冒烟 + 全量测试 + App 构造/销毁
 mcp_verify('SkipTests', true)
 ```
 
 与 `final_verify` 的区别：`final_verify` 面向无头 `-batch`（打包/安装/测试，全部用临时目录），`mcp_verify` 面向桌面会话（不动安装目录、不重打包，只验证「当前工作区的代码在真实 MATLAB 里能跑」）。两者共用同一套测试夹具 `swbfixture.Workbooks`，工作簿都生成在系统临时目录，不会改动仓库与项目文件。
 
-实测（R2024b Update 8，桌面会话，当时套件为 76 个方法）：`PIPELINE_OK=1`、`TEST_TOTAL=76 PASSED=76 FAILED=0`、`APP_CONSTRUCT_OK=1 APP_DELETE_OK=1`；`SimWorkbench()` 在桌面上正常弹出五页窗口，截图存 `build/mcp_desktop_launch.png`。加入 `swbtest.TestAppUI` 后套件为 79 个方法；v1.5 再并入 `swbtest.TestTemplateConfig`（12）与 `swbtest.TestTemplateConfigDialog`（6）并给 `TestAppUI` 加第 4 例，`-batch` 实测 `98/98`（58.21 s）。
+实测（R2024b Update 8，桌面会话，当时套件为 76 个方法）：`PIPELINE_OK=1`、`TEST_TOTAL=76 PASSED=76 FAILED=0`、`APP_CONSTRUCT_OK=1 APP_DELETE_OK=1`；`SimWorkbench()` 在桌面上正常弹出六页窗口，截图存 `build/mcp_desktop_launch.png`。加入 `swbtest.TestAppUI` 后套件为 79 个方法；v1.5 再并入 `swbtest.TestTemplateConfig`（12）与 `swbtest.TestTemplateConfigDialog`（6）并给 `TestAppUI` 加第 4 例，`-batch` 实测 `98/98`（58.21 s）。
 
 > 注意：MCP 连的是桌面会话（`usejava('desktop')=1`），默认 `pwd` 未必是本仓库，务必先 `addpath` 上面的三个目录；`-batch` 与桌面会话的类缓存互不影响，改了 `app/+swb` 后桌面端若报「没有定义方法 …」，执行 `clear classes` 或重启 MATLAB。
 
@@ -230,7 +232,7 @@ mcp_verify('SkipTests', true)
 
 | 内容 | 位置 |
 |---|---|
-| 机器级设置 | App 安装目录下的 `simworkbench.json`（Python 路径、默认 TLC/冲突策略、最近使用、模板 Config；旧版 prefdir 配置首次运行自动迁移） |
+| 机器级设置 | App 安装目录下的 `simworkbench.json`（Python 路径、默认 TLC/冲突策略、最近使用、常用路径 `FavoritePaths`、模板 Config；旧版 prefdir 配置首次运行自动迁移） |
 | 项目数据 | 两份 Excel 工作簿（唯一项目级数据源） |
 | 日志 | 内存 `Log.Entries`（上限 5000），手动导出，默认不落盘 |
 
@@ -256,10 +258,11 @@ Python 本机实测：`D:\SoftwareInstallation\Python3147\python.exe` + openpyxl
 | P1 基础层（Schema/Settings/Log/Workbook/PortTable） | ✅ |
 | P2 字典侧（Validator/ScriptBuilder/Dictionary/ReverseSync/PythonService） | ✅ |
 | P3 模型侧（ModelBuilder/PortSync/CodeMapping/PortExport） | ✅ |
-| P4 UI（五页 + 流水线 + 设置 + 日志） | ✅ |
-| P5 交付（回归/打包/文档/边界） | ✅ 127/127 回归通过（v1.7.1）；`.mlappinstall` 与 `.mltbx` 均已按 v1.7.1 重打（两者都不含 `+myPackage`），干净安装/启动冒烟/安装副本自检通过 |
+| P4 UI（六页 + 流水线 + 设置 + 日志） | ✅ |
+| P5 交付（回归/打包/文档/边界） | ✅ 133/133 回归通过（v1.8 常用路径，2026-11-04；v1.7.1 为 127/127）；`.mlappinstall` 与 `.mltbx` 均已按 v1.7.1 重打（两者都不含 `+myPackage`），干净安装/启动冒烟/安装副本自检通过 |
 | v1.1 修复 | ✅ 外部同名模型警告、保存后模型路径校验、目标目录为空时也检测外部同名模型 |
 | v1.2 验收 | ✅ `build/final_verify.m` 一键验收；`build/launch_app.m` 绕过 addon 注册启动；文档同步到 v1.2 |
+| v1.8 新增 | ✅ 「常用路径」独立选项卡（与工作流/数据字典平级）：记录常用文件夹，支持 MATLAB 切换到该文件夹（`cd`）、在资源管理器打开（`winopen`）、输入/浏览添加与表格选中删除；`swb.Settings` 新增 `FavoritePaths` 持久化（`addFavoritePath` 去重置顶 / `removeFavoritePath`），选项卡内表格 + 状态栏 + 恢复焦点 guard。新增 `TestFavoritePaths` 6 例（回归 133/133）。顺带修正两处 v1.7.2 遗留的过时测试：`TestModelBuilder/testCreateContinuous` 显式传 `SolverType='Continuous'`（默认已改离散）、`TestReverseSync/testMissingDictErrors` 空路径改为验证自动命名导出 |
 | v1.7.2 修复与改进 | ✅ SLDD → Excel 反向同步：Excel 路径为空时自动导出为与 `.sldd` 同目录同名 `.xlsx`（界面与服务层双层回退）；导出完成/失败给出明确状态栏与日志反馈；数据字典页浏览 `.sldd` 改用打开对话框（不再误弹替换确认）；清空日志修复 `uitextarea` 类型错误；设置页「默认冲突策略」接入模型页名称冲突下拉框（启动/重新读取时初始化）；求解器默认改为离散（Fixed-step） |
 | v1.7.1 修复 | ✅ 换字典工作簿后默认输出名不更新的问题：数据字典页的「对象脚本」/「数据字典」原来只在字段为空时填一次默认名，换工作簿就停在旧名字上；现改为**跟随字典工作簿**（`AutoScriptFile`/`AutoSlddFile` 记住上次自动值，字段为空或仍是自动值时才改写 `<base>_objects.m` / `<base>.sldd`，**手选过的路径保留**）。另外两个页面的「字典工作簿」双向同步：数据字典页手改路径会同步到工作流页并重新读取（`onDictWorkbookEdited`），工作流页「读取」也会把数据字典页刷新到同一路径（`syncDictWorkbookEdit`）。新增 `TestAppUI` 3 例（127/127，75.1 s；未重新打包） |
 | v1.7.1 打包 | ✅ App 安装包不再包含 `app/resources/+myPackage`：该目录只是本地 CSC 演示包（`useLocalCustomStorageClasses` 的 `@Signal`/`@Parameter` 示例），从源码树运行时由 `swb.Dictionary.ensurePackagePath` 按需 `addpath`；随包发布反而会在安装后把 `resources` 加进路径、遮蔽用户工程自己的 `+myPackage`。`make_appinstaller` 新增 `ExcludeResources`（默认 `{'+myPackage'}`），暂存时递归跳过、打包后解包产物二次校验；`final_verify` 增加安装副本 `INSTALLED_HAS_MYPACKAGE=0` 检查。包版本默认 `'1.6'` → `'1.7.1'`。重打后 `.mlappinstall` **42 个条目（zip 元数据 `version=1.7.1`）、无任何 `+myPackage` 条目**，字节数约 159 KB（精确值见 `build/final_report.txt` 的 `PACKAGE_BYTES`）；`final_verify` 完整验收 `127/127`、`LAUNCH_OK=1`、`INSTALLED_RESOURCES=1`、`INSTALLED_HAS_MYPACKAGE=0`。`.mltbx` 也按同一口径重打（`make_toolbox` 的 `ExcludeResources` + `packageHasEntry` 解包复核；192,549 字节 / 32 个源文件、45 个 zip 项，`Contents.m` 版本 1.7.1，无 `+myPackage`） |
@@ -320,6 +323,6 @@ final_verify('SkipTests', true)    % 只验打包/安装/启动，不跑回归
 | [设计文档 v0.9](docs/design/all-in-one-design.md) | 契约、分层、API 表、流水线、UI、测试、验收、风险 |
 | [NewModelApp 分析](docs/analysis/newmodelapp.md) | 旧模型侧逐文件分析（358 行） |
 | [AutoCreateSldd 分析](docs/analysis/autocreatesldd.md) | 旧字典侧逐文件分析（324 行） |
-| [界面截图](docs/ui/) | 5 页实拍 |
+| [界面截图](docs/ui/) | 6 页实拍 |
 
 改列定义只改 `app/+swb/Schema.m`；新增服务必须遵守上述四条规则；UI 回调只做"读控件 → 组 `opts` → 调服务 → 渲染"。

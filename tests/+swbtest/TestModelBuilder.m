@@ -11,7 +11,7 @@ classdef TestModelBuilder < swbtest.SwbTestBase
         function testCreateContinuous(tc)
             d = tc.tmpDir();
             name = [tc.P 'cont'];
-            r = swb.ModelBuilder.create(struct('Name', name, 'Folder', d));
+            r = swb.ModelBuilder.create(struct('Name', name, 'Folder', d, 'SolverType', 'Continuous'));
             tc.verifyTrue(r.ok, r.errorText);
             tc.verifyEqual(r.modelName, name);
             tc.verifyTrue(isfile(fullfile(d, [name '.slx'])));

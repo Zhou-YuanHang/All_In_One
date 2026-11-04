@@ -95,8 +95,11 @@ classdef TestReverseSync < matlab.unittest.TestCase
             tc.verifyError(@() swb.ReverseSync.toWorkbook( ...
                 fullfile(tc.TempDir, 'nope.sldd'), fullfile(tc.TempDir, 'x.xlsx')), ...
                 'swb:ReverseSync:missingDict');
-            tc.verifyError(@() swb.ReverseSync.toWorkbook( ...
-                tc.DictPath, ''), 'swb:ReverseSync:missingWorkbook');
+            % v1.7.2 起 Excel 路径为空不再是错误：自动导出为与 .sldd 同目录同名 .xlsx
+            res = swb.ReverseSync.toWorkbook(tc.DictPath, '');
+            tc.verifyTrue(res.ok, res.errorText);
+            tc.verifyEqual(res.workbookPath, fullfile(tc.TempDir, 'roundtrip.xlsx'));
+            tc.verifyTrue(isfile(res.workbookPath));
         end
     end
 
